@@ -20,6 +20,7 @@ body {
 }
 .doc > *        { max-width: 40rem; margin-inline: auto; }
 .doc > figure   { max-width: 54rem; }
+.doc > figure.narrow { max-width: 34rem; }
 .doc > .gif     { max-width: 560px; }
 
 h1 {
