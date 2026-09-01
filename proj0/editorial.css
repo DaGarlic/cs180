@@ -1,0 +1,135 @@
+/* CS180 Project 0 — warm editorial layer over ../styles.css.
+   Loaded after styles.css; overrides colour, paper and type treatment
+   and adds section-number and figure styling. Scoped to this page. */
+
+:root {
+  --paper:     #faf7f1;
+  --ink:       #211d17;
+  --ink-soft:  #6b6355;
+  --rule:      #e4dccc;
+  --accent:    #8a2b2b;
+  --accent-dk: #6f2020;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.doc { padding-top: 4.25rem; }
+
+/* --- headings ----------------------------------------------------- */
+
+h1 { letter-spacing: -0.014em; }
+
+h2 {
+  position: relative;
+  border-top-color: var(--rule);
+}
+
+/* leading number, wrapped in <span class="secno"> in the markup */
+.secno {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: .78em;
+  letter-spacing: .02em;
+  color: var(--accent);
+}
+.secno::after { content: "."; }
+
+@media (min-width: 56rem) {
+  /* hang the number in the left margin on wide screens */
+  .secno {
+    position: absolute;
+    left: -2.6rem;
+    top: 1.9rem;
+    font-size: .62em;
+    line-height: 1;
+  }
+  .secno::after { content: none; }
+}
+
+/* --- metadata, toc, setup --------------------------------------- */
+
+.sub {
+  font-family: var(--sans);
+  letter-spacing: .006em;
+  color: var(--ink-soft);
+}
+
+h1 + .sub {
+  padding-bottom: 1.4rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.toc {
+  font-family: var(--sans);
+  font-size: .8rem;
+  line-height: 1.9;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.toc a        { color: var(--ink); }
+.toc a:hover  { color: var(--accent); }
+.toc .sep     { margin: 0 .5rem; color: var(--accent); }
+
+.setup { color: var(--ink-soft); }
+
+/* --- links ------------------------------------------------------- */
+
+a {
+  color: var(--accent);
+  text-decoration-color: rgba(138, 43, 43, .35);
+  text-underline-offset: 3px;
+}
+a:hover {
+  color: var(--accent-dk);
+  text-decoration-color: currentColor;
+}
+
+::selection { background: rgba(138, 43, 43, .18); }
+
+/* --- figures --------------------------------------------------- */
+
+.pair { gap: .7rem; }
+
+figure img {
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(33, 29, 23, .06),
+              0 10px 26px rgba(33, 29, 23, .07);
+}
+
+/* the six-frame contact sheet stays flat and tight */
+.stills figure img {
+  border-radius: 1px;
+  box-shadow: none;
+}
+
+figcaption {
+  font-family: var(--sans);
+  font-size: .82rem;
+  letter-spacing: .008em;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+figcaption b {
+  font-weight: 600;
+  letter-spacing: .03em;
+  color: var(--accent);
+}
+.stills + .sub b { color: var(--accent); }
+
+/* --- print ---------------------------------------------------- */
+
+@media print {
+  body { background: #fff; color: #000; }
+  a, .toc a, figcaption b, .secno { color: #000; }
+  figure img { border-color: #999; box-shadow: none; }
+  h1 + .sub { border-color: #999; }
+  .secno { position: static; font-size: .78em; }
+  .secno::after { content: "."; }
+}
