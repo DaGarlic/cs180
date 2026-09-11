@@ -86,20 +86,6 @@
     compounds across levels.
   </p>
 
-  <p class="setup">
-    <b>Multi-start.</b> A plain pyramid can get stuck. Depending on how
-    coarse the base level is, a handful of images converge to the wrong
-    local minimum, often because a repetitive pattern (tiled
-    stonework, furrows in a field) looks similarly good at several offsets
-    once the image is small enough to lose that detail. Rather than hand-pick
-    a <code>min_size</code> per image (which the assignment rules out
-    anyway), I run the pyramid from four different base sizes
-    (50, 100, 150, 200px) and keep whichever of the four results actually
-    scores lowest. This is still a single, fixed, per-channel procedure,
-    with no manual tuning per image.
-  </p>
-
-
   <h2 id="s2"><span class="secno">2</span> Single-scale alignment</h2>
   <p class="setup">
     Results of the single-scale, raw-pixel L2 search (&plusmn;15px window)
@@ -124,7 +110,7 @@
   <table class="offsets-table">
     <thead><tr><th>Image</th><th>G offset (x, y)</th><th>R offset (x, y)</th><th>Time</th></tr></thead>
     <tbody>
-          <tr><td>Cathedral</td><td class="num">(5, 2)</td><td class="num">(12, 3)</td><td class="num">0.10s</td></tr>
+          <tr><td>Cathedral</td><td class="num">(5, 2)</td><td class="num">(12, 3)</td><td class="num">0.11s</td></tr>
           <tr><td>Monastery</td><td class="num">(-3, 2)</td><td class="num">(3, 2)</td><td class="num">0.07s</td></tr>
           <tr><td>Tobolsk</td><td class="num">(3, 3)</td><td class="num">(7, 3)</td><td class="num">0.07s</td></tr>
     </tbody>
@@ -136,9 +122,8 @@
     Results of the multi-scale pyramid alignment, with the L2 norm computed
     directly on raw RGB pixel values (as required), on all 14 provided
     example plates. All 14 use the exact same procedure and parameters,
-    with nothing tuned per image. Two of the 14 (church, emir) come out
-    visibly misaligned with this metric. See Section 5 for why, and for
-    the fix.
+    with nothing tuned per image. One of the 14 (emir) comes out visibly
+    misaligned with this metric. See Section 5 for why, and for the fix.
   </p>
 
   <div class="resultsgrid">
@@ -148,11 +133,11 @@
     </figure>
     <figure>
       <img src="media/pyramid_l2/church_aligned.jpg" width="560" height="493" loading="lazy" alt="Aligned Prokudin-Gorskii plate: Church">
-      <figcaption>Church<br><span class="offsets">G (25, 4) &middot; R (76, 508)</span> <b>(misaligned, see Section 5)</b></figcaption>
+      <figcaption>Church<br><span class="offsets">G (25, 4) &middot; R (58, -4)</span></figcaption>
     </figure>
     <figure>
       <img src="media/pyramid_l2/emir_aligned.jpg" width="560" height="485" loading="lazy" alt="Aligned Prokudin-Gorskii plate: Emir of Bukhara">
-      <figcaption>Emir of Bukhara<br><span class="offsets">G (48, 24) &middot; R (508, -61)</span> <b>(misaligned, see Section 5)</b></figcaption>
+      <figcaption>Emir of Bukhara<br><span class="offsets">G (48, 24) &middot; R (71, 39)</span> <b>(misaligned, see Section 5)</b></figcaption>
     </figure>
     <figure>
       <img src="media/pyramid_l2/harvesters_aligned.jpg" width="560" height="489" loading="lazy" alt="Aligned Prokudin-Gorskii plate: Harvesters">
@@ -204,19 +189,19 @@
     <thead><tr><th>Image</th><th>G offset (x, y)</th><th>R offset (x, y)</th><th>Time</th></tr></thead>
     <tbody>
           <tr><td>Cathedral</td><td class="num">(5, 2)</td><td class="num">(12, 4)</td><td class="num">0.2s</td></tr>
-          <tr class="fail"><td>Church</td><td class="num">(25, 4)</td><td class="num">(76, 508)</td><td class="num">6.5s</td></tr>
-          <tr class="fail"><td>Emir of Bukhara</td><td class="num">(48, 24)</td><td class="num">(508, -61)</td><td class="num">6.7s</td></tr>
-          <tr><td>Harvesters</td><td class="num">(59, 17)</td><td class="num">(123, 14)</td><td class="num">6.9s</td></tr>
-          <tr><td>Icon</td><td class="num">(41, 17)</td><td class="num">(89, 23)</td><td class="num">7.0s</td></tr>
-          <tr><td>Ilemselga</td><td class="num">(40, 7)</td><td class="num">(131, 11)</td><td class="num">7.1s</td></tr>
-          <tr><td>Melons</td><td class="num">(81, 10)</td><td class="num">(178, 14)</td><td class="num">7.0s</td></tr>
-          <tr><td>Monastery</td><td class="num">(-3, 2)</td><td class="num">(3, 2)</td><td class="num">0.1s</td></tr>
-          <tr><td>Religious Painting</td><td class="num">(29, 3)</td><td class="num">(69, 7)</td><td class="num">6.9s</td></tr>
-          <tr><td>Self Portrait</td><td class="num">(78, 29)</td><td class="num">(175, 37)</td><td class="num">7.2s</td></tr>
-          <tr><td>Siren (Lilacs)</td><td class="num">(50, -5)</td><td class="num">(97, -24)</td><td class="num">7.1s</td></tr>
-          <tr><td>Three Generations</td><td class="num">(52, 14)</td><td class="num">(111, 12)</td><td class="num">6.6s</td></tr>
-          <tr><td>Tobolsk</td><td class="num">(3, 3)</td><td class="num">(7, 3)</td><td class="num">0.1s</td></tr>
-          <tr><td>Wharf</td><td class="num">(15, -6)</td><td class="num">(82, -15)</td><td class="num">6.9s</td></tr>
+          <tr><td>Church</td><td class="num">(25, 4)</td><td class="num">(58, -4)</td><td class="num">2.0s</td></tr>
+          <tr class="fail"><td>Emir of Bukhara</td><td class="num">(48, 24)</td><td class="num">(71, 39)</td><td class="num">2.0s</td></tr>
+          <tr><td>Harvesters</td><td class="num">(59, 17)</td><td class="num">(123, 14)</td><td class="num">1.9s</td></tr>
+          <tr><td>Icon</td><td class="num">(41, 17)</td><td class="num">(89, 23)</td><td class="num">2.0s</td></tr>
+          <tr><td>Ilemselga</td><td class="num">(40, 7)</td><td class="num">(131, 11)</td><td class="num">2.0s</td></tr>
+          <tr><td>Melons</td><td class="num">(81, 10)</td><td class="num">(178, 14)</td><td class="num">2.0s</td></tr>
+          <tr><td>Monastery</td><td class="num">(-3, 2)</td><td class="num">(3, 2)</td><td class="num">0.0s</td></tr>
+          <tr><td>Religious Painting</td><td class="num">(29, 3)</td><td class="num">(69, 7)</td><td class="num">1.9s</td></tr>
+          <tr><td>Self Portrait</td><td class="num">(78, 29)</td><td class="num">(175, 37)</td><td class="num">2.0s</td></tr>
+          <tr><td>Siren (Lilacs)</td><td class="num">(50, -5)</td><td class="num">(97, -24)</td><td class="num">2.0s</td></tr>
+          <tr><td>Three Generations</td><td class="num">(52, 14)</td><td class="num">(111, 12)</td><td class="num">2.1s</td></tr>
+          <tr><td>Tobolsk</td><td class="num">(3, 3)</td><td class="num">(7, 3)</td><td class="num">0.0s</td></tr>
+          <tr><td>Wharf</td><td class="num">(15, -6)</td><td class="num">(82, -15)</td><td class="num">2.0s</td></tr>
     </tbody>
   </table>
 
@@ -248,9 +233,9 @@
   <table class="offsets-table">
     <thead><tr><th>Image</th><th>G offset (x, y)</th><th>R offset (x, y)</th><th>Time</th></tr></thead>
     <tbody>
-          <tr><td>Types of Dagestan</td><td class="num">(16, 1)</td><td class="num">(103, -1)</td><td class="num">7.0s</td></tr>
-          <tr><td>Study of a Head</td><td class="num">(55, 8)</td><td class="num">(114, 12)</td><td class="num">7.2s</td></tr>
-          <tr><td>In Malorossiya</td><td class="num">(26, 3)</td><td class="num">(120, 4)</td><td class="num">7.2s</td></tr>
+          <tr><td>Types of Dagestan</td><td class="num">(16, 1)</td><td class="num">(103, -1)</td><td class="num">2.0s</td></tr>
+          <tr><td>Study of a Head</td><td class="num">(55, 8)</td><td class="num">(114, 12)</td><td class="num">2.3s</td></tr>
+          <tr><td>In Malorossiya</td><td class="num">(26, 3)</td><td class="num">(120, 4)</td><td class="num">1.9s</td></tr>
     </tbody>
   </table>
 
@@ -258,35 +243,23 @@
   <h2 id="s5"><span class="secno">5</span> Bells &amp; whistles: better features</h2>
   <p class="setup">
     The required baseline metric is L2/SSD computed directly on raw RGB
-    pixel values, shown in Section 3 and Section 4 above. On 15 of the 17
+    pixel values, shown in Section 3 and Section 4 above. On 16 of the 17
     plates (all 3 custom ones included) this already works fine. But on
-    <b>church</b> and <b>emir</b>, raw-pixel L2
-    converges to a confidently wrong answer. The problem isn't the search
-    window being too narrow (I verified a wider window finds the exact same
-    wrong optimum), but that the metric itself prefers the wrong shift:
-    large flat, low-texture regions and a few repeating patterns (the
-    tiled stonework in emir's doorway) score deceptively well at the wrong
-    offset once pixel intensities are compared directly.
+    <b>emir</b>, raw-pixel L2 converges to a confidently wrong answer. The
+    problem isn't the search window being too narrow (I verified a wider
+    window finds the exact same wrong optimum), but that the metric itself
+    prefers the wrong shift: the tiled stonework around the doorway repeats
+    often enough that a few wrong offsets line it up just as well as the
+    correct one, once pixel intensities are compared directly.
   </p>
   <p class="setup">
     The fix: score alignment on each channel's Sobel gradient magnitude
     instead of its raw pixel values (still with L2/SSD as the metric, just
     on a different feature). Edges are far more distinctive than flat
     regions and largely invariant to the brightness differences between
-    color channels, which fixes both failures without regressing any of
-    the other 15 images.
+    color channels, which fixes the failure without regressing any of the
+    other 16 images.
   </p>
-
-  <div class="bw-block">
-    <h3>Church: before and after</h3>
-    <figure>
-      <div class="pair">
-      <img src="media/pyramid_l2/church_aligned.jpg" width="560" height="493" loading="lazy" alt="raw-pixel L2 (before) alignment of church">
-      <img src="media/golden/church_aligned.jpg" width="560" height="493" loading="lazy" alt="gradient-based (after) alignment of church">
-      </div>
-      <figcaption>Left: raw-pixel L2 (R offset (76, 508), clearly wrong). Right: gradient-based (R offset (58, -4)).</figcaption>
-    </figure>
-  </div>
 
   <div class="bw-block">
     <h3>Emir of Bukhara: before and after</h3>
@@ -295,7 +268,7 @@
       <img src="media/pyramid_l2/emir_aligned.jpg" width="560" height="485" loading="lazy" alt="raw-pixel L2 (before) alignment of emir">
       <img src="media/golden/emir_aligned.jpg" width="560" height="485" loading="lazy" alt="gradient-based (after) alignment of emir">
       </div>
-      <figcaption>Left: raw-pixel L2 (R offset (508, -61), clearly wrong). Right: gradient-based (R offset (107, 40)).</figcaption>
+      <figcaption>Left: raw-pixel L2 (R offset (71, 39), clearly wrong). Right: gradient-based (R offset (107, 40)).</figcaption>
     </figure>
   </div>
 
@@ -303,16 +276,14 @@
   <h2 id="s6"><span class="secno">6</span> Failure cases</h2>
   <p class="setup">
     With the required baseline (multi-scale pyramid, L2 on raw RGB pixels,
-    Sections 3 and 4), 2 of the 17 images, <b>church</b> and
-    <b>emir</b>, both from the provided set, come out visibly
-    misaligned (all 3 custom images align correctly). In both cases the
-    search itself isn't the problem (a wider window converges to the exact
-    same wrong answer). Raw pixel intensities just aren't a distinctive
-    enough signal on these two plates, so L2 prefers a shift that lines up
-    flat, low-texture regions (or a repeating tiled pattern, for emir) over
-    the shift that actually lines up the photo. See Section 5 for the fix
-    (gradient features), which brings both back into alignment. 0/17 fail
-    with the full pipeline.
+    Sections 3 and 4), 1 of the 17 images, <b>emir</b>, comes out visibly
+    misaligned (all 3 custom images and the other 13 provided ones align
+    correctly). The search itself isn't the problem (a wider window
+    converges to the exact same wrong answer). Raw pixel intensities just
+    aren't a distinctive enough signal on this plate: the repeating tiled
+    pattern around the doorway lines up just as well at the wrong offset as
+    at the correct one. See Section 5 for the fix (gradient features),
+    which brings it back into alignment. 0/17 fail with the full pipeline.
   </p>
 
 </main>
