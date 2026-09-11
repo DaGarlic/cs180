@@ -1,1 +1,13 @@
 .DS_Store
+__pycache__/
+*.pyc
+
+# proj1: only what the deployed page needs (index.html, editorial.css,
+# media/) is tracked. Source scans, full-res outputs, the results manifest,
+# and the code/ pipeline aren't served by the site, so they're kept local.
+proj1/data/
+proj1/data_custom/
+proj1/output/
+proj1/output_l2/
+proj1/results.json
+proj1/code/
