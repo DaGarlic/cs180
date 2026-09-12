@@ -183,11 +183,12 @@ table.offsets-table tr.fail td { color: var(--accent); }
 /* --- bells & whistles before/after -------------------------------- */
 
 .bw-block { margin: 2.4rem auto 0; }
-.bw-block h3 {
+h3 {
   font-size: 1.05rem;
   font-weight: 600;
-  margin: 0 0 .4rem;
+  margin: 1.8rem 0 .4rem;
 }
+.bw-block h3 { margin-top: 0; }
 
 /* --- print ---------------------------------------------------- */
 
