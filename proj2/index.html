@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project 2: Fun with Filters and Frequencies</title>
+<meta name="description" content="CS180 Project 2: convolution from scratch, finite difference operators, and frequency-domain image processing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="editorial.css">
+</head>
+<body>
+<main class="doc">
+
+  <h1>Fun with Filters and Frequencies</h1>
+  <p class="sub">Project 2 &middot; Ariq Koh &middot; CS180, Fall 2026 &middot; convolution, edges and frequencies</p>
+
+  <p class="setup">
+    This page covers Part 1.1 so far, and I'll add the other parts as I finish them.
+  </p>
+
+
+  <h2 id="s1"><span class="secno">1.1</span> Convolution from scratch</h2>
+  <p class="setup">
+    Convolving an image with a kernel means flipping the kernel, sliding it over the
+    image, and at every position multiplying it against the pixels underneath and summing
+    the result. I wrote this in <code>numpy</code> only, first with four nested loops and then with
+    two, on a zero-padded copy of the image. <code>scipy.signal.convolve2d</code> is used only
+    as the reference to check against, and <code>cv2</code> only reads and saves images.
+  </p>
+
+  <h3>Padding</h3>
+  <p class="setup">
+    Both versions pad the image with zeros first so the kernel can be centered on the
+    edge pixels. For an image of size H&times;W and a kernel of size kh&times;kw:
+  </p>
+
+  <table class="data-table">
+    <thead><tr><th>Mode</th><th>Top / left padding</th><th>Bottom / right padding</th><th>Output size</th></tr></thead>
+    <tbody>
+      <tr><td>same</td><td class="num">kh&minus;1&minus;(kh&minus;1)//2 &nbsp;/&nbsp; kw&minus;1&minus;(kw&minus;1)//2</td><td class="num">(kh&minus;1)//2 &nbsp;/&nbsp; (kw&minus;1)//2</td><td class="num">H &times; W</td></tr>
+      <tr><td>full</td><td class="num">kh&minus;1 &nbsp;/&nbsp; kw&minus;1</td><td class="num">kh&minus;1 &nbsp;/&nbsp; kw&minus;1</td><td class="num">(H+kh&minus;1) &times; (W+kw&minus;1)</td></tr>
+    </tbody>
+  </table>
+
+  <p class="setup">
+    For an odd kernel, "same" padding is just <code>k//2</code> on every side. For an even one,
+    like the 1&times;2 Dx and 2&times;1 Dy below, the padding can't be symmetric, so the extra
+    row or column goes on the top or left. That choice is what makes the output line up
+    with <code>scipy</code>'s <code>mode="same"</code>.
+  </p>
+
+<pre class="code"><code>def pad_img(image, kernel, mode="same"):
+    # Zero pad the image ("same" keeps the output size, "full" gives every position the kernel overlaps)
+    height, width = image.shape[:2]
+    kernel_h, kernel_w = len(kernel), len(kernel[0])
+    if mode == "full":
+        top, left = kernel_h - 1, kernel_w - 1
+        bottom, right = kernel_h - 1, kernel_w - 1
+    elif mode == "same":
+        bottom, right = (kernel_h - 1) // 2, (kernel_w - 1) // 2
+        top, left = kernel_h - 1 - bottom, kernel_w - 1 - right
+    else:
+        raise ValueError(f"Unknown padding mode: {mode}")
+
+    padded_image = np.zeros((height + top + bottom, width + left + right))
+    padded_image[top:top + height, left:left + width] = image
+    return padded_image</code></pre>
+
+  <h3>Four loops</h3>
+  <p class="setup">
+    The outer two loops visit every output pixel, and the inner two loops walk over the
+    kernel, accumulating one product at a time. The flip is the
+    <code>[::-1, ::-1]</code> on the kernel, which reverses it along both axes.
+  </p>
+
+<pre class="code"><code>def convol_img(image, kernel, mode="same"):
+    # Perform convolution of the image with the given kernel (four for loop implementation)
+    kernel_h, kernel_w = len(kernel), len(kernel[0])
+    padded_image = pad_img(image, kernel, mode)
+    flipped_kernel = np.array(kernel)[::-1, ::-1]
+    height = padded_image.shape[0] - kernel_h + 1
+    width = padded_image.shape[1] - kernel_w + 1
+    output_image = np.zeros((height, width))
+
+    for i in range(height):
+        for j in range(width):
+            sum_val = 0.0
+            for ki in range(kernel_h):
+                for kj in range(kernel_w):
+                    sum_val += padded_image[i + ki][j + kj] * flipped_kernel[ki][kj]
+            output_image[i][j] = sum_val
+
+    return output_image</code></pre>
+
+  <h3>Two loops</h3>
+  <p class="setup">
+    The two inner loops are replaced by one array operation. I slice out the
+    kernel-sized window of the padded image at the current pixel, multiply it elementwise
+    with the flipped kernel, and sum the result with <code>np.sum</code>.
+  </p>
+
+<pre class="code"><code>def convol_img_2loops(image, kernel, mode="same"):
+    # Perform convolution of the image with the given kernel (two for loop implementation)
+    kernel_h, kernel_w = len(kernel), len(kernel[0])
+    padded_image = pad_img(image, kernel, mode)
+    flipped_kernel = np.array(kernel)[::-1, ::-1]
+    height = padded_image.shape[0] - kernel_h + 1
+    width = padded_image.shape[1] - kernel_w + 1
+    output_image = np.zeros((height, width))
+
+    for i in range(height):
+        for j in range(width):
+            output_image[i][j] = np.sum(padded_image[i:i + kernel_h, j:j + kernel_w] * flipped_kernel)
+
+    return output_image</code></pre>
+
+  <h3>The kernels</h3>
+  <p class="setup">
+    The box filter averages a 9&times;9 neighborhood, so each entry is 1/81 and the kernel
+    sums to 1. Dx and Dy are the finite difference operators. Because convolution flips the
+    kernel, convolving with <code>[1, -1]</code> gives <code>f(x) &minus; f(x&minus;1)</code>,
+    the final value minus the initial one, so an edge that gets brighter to the right comes
+    out positive.
+  </p>
+
+<pre class="code"><code>Dx = [[1, -1]]
+Dy = [[1], [-1]]
+
+def box_kernel(size):
+    # Generate a 2D box filter kernel (every entry is 1 / size^2 so it sums to 1)
+    kernel = []
+    for i in range(size):
+        row = []
+        for j in range(size):
+            row.append(1 / size**2)
+        kernel.append(row)
+    return kernel</code></pre>
+
+  <h3>Checking against scipy</h3>
+  <p class="setup">
+    The reference call zero-fills the border the same way my padding does. I run all
+    three implementations on the same image and kernel, in both padding modes, and
+    assert that they agree.
+  </p>
+
+<pre class="code"><code>def convol_with_scipy(image, kernel, mode="same"):
+    return scipy.signal.convolve2d(image, kernel, mode=mode, boundary="fill", fillvalue=0)
+
+# in part1.py, for each of the box filter, Dx and Dy, and for mode in ["same", "full"]:
+cimg, t_four = timed(convol_img, img, kernel, mode)
+c2img, t_two = timed(convol_img_2loops, img, kernel, mode)
+scimg, t_scipy = timed(convol_with_scipy, img, kernel, mode)
+assert np.allclose(cimg, scimg), f"four loop {name} ({mode}) does not match scipy"
+assert np.allclose(c2img, scimg), f"two loop {name} ({mode}) does not match scipy"</code></pre>
+
+  <h3>Results</h3>
+  <p class="setup">
+    I read the photo as grayscale with <code>cv2.imread(..., cv2.IMREAD_GRAYSCALE)</code> and
+    convolved it with the 9&times;9 box filter, Dx and Dy, using "same" padding. The
+    four-loop, two-loop and <code>scipy</code> outputs are identical, and the saved images
+    below are from my four-loop version.
+  </p>
+
+  <div class="grid2">
+    <figure>
+      <img src="media/paddling_gray.jpg" width="960" height="1280" loading="lazy" alt="Grayscale photo of a person paddling a stand-up paddleboard on a lake, with forested hills and clouds behind">
+      <figcaption><b>Figure 1.</b> The input, read as grayscale.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/box_filter.jpg" width="960" height="1280" loading="lazy" alt="The same photo blurred by a 9 by 9 box filter, with a dark border around the edges">
+      <figcaption><b>Figure 2.</b> Convolved with the 9&times;9 box filter. It blurs the image, and the border is darker where the kernel overlaps the zero padding.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/dx.jpg" width="960" height="1280" loading="lazy" alt="Absolute Dx response: bright thin lines along vertical edges such as tree trunks, the paddle and the person's legs, and black elsewhere">
+      <figcaption><b>Figure 3.</b> Convolved with Dx. Vertical edges light up: the tree line, the paddle and the paddler's legs. Absolute value, scaled so the largest response is 255.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/dy.jpg" width="960" height="1280" loading="lazy" alt="Absolute Dy response: bright lines along horizontal edges such as the horizon, the shoreline and the water ripples, and black elsewhere">
+      <figcaption><b>Figure 4.</b> Convolved with Dy. Horizontal edges light up: the ridge line, the shoreline and the water ripples. Absolute value, scaled so the largest response is 255.</figcaption>
+    </figure>
+  </div>
+
+  <h3>Runtime</h3>
+  <p class="setup">
+    I timed each implementation once on the full 1280&times;960 image, on my laptop (Python 3.12, NumPy 2.4, SciPy 1.17). The <code>scipy</code> times exclude importing it.
+  </p>
+
+  <table class="data-table runtime">
+    <thead><tr><th>Kernel</th><th>Mode</th><th>Output size</th><th>Four loops</th><th>Two loops</th><th>scipy</th><th>Max |diff|</th></tr></thead>
+    <tbody>
+      <tr><td>9&times;9 box</td><td>same</td><td class="num">1280 &times; 960</td><td class="num">26.20 s</td><td class="num">2.58 s</td><td class="num">0.084 s</td><td class="num">6.3e-13</td></tr>
+      <tr><td>9&times;9 box</td><td>full</td><td class="num">1288 &times; 968</td><td class="num">26.25 s</td><td class="num">2.49 s</td><td class="num">0.084 s</td><td class="num">6.3e-13</td></tr>
+      <tr><td>Dx</td><td>same</td><td class="num">1280 &times; 960</td><td class="num">0.93 s</td><td class="num">2.44 s</td><td class="num">0.009 s</td><td class="num">0</td></tr>
+      <tr><td>Dx</td><td>full</td><td class="num">1280 &times; 961</td><td class="num">0.95 s</td><td class="num">2.46 s</td><td class="num">0.008 s</td><td class="num">0</td></tr>
+      <tr><td>Dy</td><td>same</td><td class="num">1280 &times; 960</td><td class="num">1.00 s</td><td class="num">2.51 s</td><td class="num">0.012 s</td><td class="num">0</td></tr>
+      <tr><td>Dy</td><td>full</td><td class="num">1281 &times; 960</td><td class="num">0.98 s</td><td class="num">2.47 s</td><td class="num">0.011 s</td><td class="num">0</td></tr>
+    </tbody>
+  </table>
+
+  <p class="setup">
+    The four-loop version does one Python-level multiply-add per kernel entry per pixel, about 100 million of them for the 9&times;9 box filter, so its time grows with the kernel: 26 s for the box filter against about 1 s for the two-entry Dx and Dy. The two-loop version makes a handful of NumPy calls per pixel instead, so its time barely depends on the kernel, about 2.5 s for all three. That makes it roughly 10 times faster for the box filter, but about 2.5 times slower for Dx and Dy, where the four-loop version only has two products to add and NumPy's per-call overhead costs more than it saves. <code>scipy</code> is much faster than either: 0.084 s for the box filter, about 30 times faster than my two-loop version and 300 times faster than the four-loop one, and about 0.01 s for Dx and Dy, because its loops run in compiled code instead of Python.
+  </p>
+
+  <h3>Boundary handling</h3>
+  <p class="setup">
+    Both use zero fill, so they agree. The largest difference from <code>scipy</code>'s <code>boundary="fill", fillvalue=0</code> is 6.3e-13 for the box filter (floating-point rounding) and exactly 0 for Dx and Dy. The mode only changes the output size: "same" returns H&times;W, while "full" returns every position where the kernel overlaps the image at all, which for the 9&times;9 filter is 8 pixels taller and wider (1288&times;968). Zero padding has two visible costs. For the box filter, output pixels within 4 pixels of the edge average in zeros and come out darker. In Figure 5 the top row falls from 152 to 85 and is back to the input's value by the fifth row. For Dx and Dy it creates a fake edge: the first column of Dx is the pixel value minus zero, so it equals the image's own left column. In the full-size Dx image that column has a mean of 155, against 5 for the column next to it, a one-pixel bright line that is too thin to see at the size shown in Figure 3. The same happens along the top row of Dy (Figure 4). <code>scipy</code> can pad by reflecting (<code>boundary="symm"</code>) or wrapping instead, which avoids both problems. I only implemented zero fill, as the assignment asks.
+  </p>
+
+  <div class="pair crops">
+    <figure>
+      <img src="media/corner_gray.png" width="400" height="400" loading="lazy" alt="Top-left 100 by 100 pixel corner of the grayscale photo, enlarged 4 times">
+    </figure>
+    <figure>
+      <img src="media/corner_box.png" width="400" height="400" loading="lazy" alt="The same corner after the 9 by 9 box filter, fading to black at the top and left edges">
+    </figure>
+  </div>
+  <p class="sub" style="max-width:40rem"><b>Figure 5.</b> The top-left 100&times;100 pixels, enlarged 4&times;. Left: the input. Right: after the box filter, darkening over the outer 4 pixels where the kernel reaches into the zero padding.</p>
+
+</main>
+</body>
+</html>

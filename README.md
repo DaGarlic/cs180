@@ -8,4 +8,6 @@ Live site: **<https://dagarlic.github.io/cs180/>**
   length, and the center of projection.
 - [Project 1 — Images of the Russian Empire](proj1/) — colorizing the
   Prokudin-Gorskii glass plate negatives.
+- [Project 2 — Fun with Filters and Frequencies](proj2/) — convolution from
+  scratch (in progress: Part 1.1 so far).
 

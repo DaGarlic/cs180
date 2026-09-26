@@ -1,6 +1,6 @@
 from math import pi, exp
 import numpy as np
-import scipy
+import scipy.signal
 
 Dx = [[1, -1]]
 Dy = [[1], [-1]]

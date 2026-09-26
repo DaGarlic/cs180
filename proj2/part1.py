@@ -2,6 +2,12 @@ from helper import convol_img, convol_img_2loops, convol_with_scipy, box_kernel,
 import cv2
 import numpy as np
 import os
+import time
+
+def timed(func, *args):
+    start = time.perf_counter()
+    result = func(*args)
+    return result, time.perf_counter() - start
 
 def save_img(path, image):
     with open(path, "wb") as f:
@@ -27,11 +33,13 @@ def run_part1p1(path_to_img_folder):
     kernels = {"box_filter": box_kernel(9), "dx": Dx, "dy": Dy}
     for name, kernel in kernels.items():
         for mode in ["same", "full"]:
-            cimg = convol_img(img, kernel, mode)
-            c2img = convol_img_2loops(img, kernel, mode)
-            scimg = convol_with_scipy(img, kernel, mode)
+            cimg, t_four = timed(convol_img, img, kernel, mode)
+            c2img, t_two = timed(convol_img_2loops, img, kernel, mode)
+            scimg, t_scipy = timed(convol_with_scipy, img, kernel, mode)
             assert np.allclose(cimg, scimg), f"four loop {name} ({mode}) does not match scipy"
             assert np.allclose(c2img, scimg), f"two loop {name} ({mode}) does not match scipy"
+            max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())
+            print(f"{name:10s} {mode:5s} out {cimg.shape}  four loop {t_four:7.2f}s  two loop {t_two:6.2f}s  scipy {t_scipy:6.3f}s  max |diff| {max_diff:.1e}")
 
             if mode == "same":
                 normalize = name != "box_filter"
