@@ -90,4 +90,21 @@ def gaussian_kernel_cv(size, sigma):
 def convol_symm_with_scipy(image, kernel):
     # Same as convol_with_scipy, but mirrors the image at the border instead of zero padding it,
     # so blurring doesn't darken the edges and no fake frame shows up in the gradients
+    if image.ndim == 3:
+        # Color image, convolve2d only takes 2D arrays so convolve each channel on its own
+        channels = []
+        for c in range(image.shape[2]):
+            channels.append(convol_symm_with_scipy(image[:, :, c], kernel))
+        return np.dstack(channels)
     return scipy.signal.convolve2d(image, kernel, mode="same", boundary="symm")
+
+def unsharp_kernel(size, sigma, alpha):
+    # Unsharp mask as a single kernel. image + alpha * (image - image * G) is linear in the image, so it
+    # equals image * ((1 + alpha) * impulse - alpha * G), where the impulse is a 1 at the center of the kernel
+    kernel = -alpha * gaussian_kernel_cv(size, sigma)
+    kernel[size // 2, size // 2] += 1 + alpha
+    return kernel
+
+def unsharp(image, kernel, sigma, alpha=1.0):
+    # Apply unsharp masking with a single convolution, alpha is how much of the high frequencies to add back
+    return convol_symm_with_scipy(image, unsharp_kernel(kernel, sigma, alpha))
