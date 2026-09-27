@@ -16,11 +16,6 @@ def clip_uint8(image):
     # Sharpening pushes values outside 0 to 255, clip them (not abs, a negative value should become black)
     return np.clip(np.round(image), 0, 255).astype(np.uint8)
 
-def psnr(image, reference):
-    # Peak signal to noise ratio in dB, higher means closer to the reference
-    mse = np.mean((image.astype(float) - reference.astype(float)) ** 2)
-    return 10 * np.log10(255**2 / mse)
-
 def run_part2p1(path_to_img_folder):
     # (image, gaussian size, sigma): the two phone photos are out of focus and much larger than taj, so use a wider blur
     images = [("taj.jpg", 5, 1.0), ("blurred_duck.JPG", 9, 2.0), ("blurred_fishes.JPG", 9, 2.0)]
@@ -48,16 +43,11 @@ def run_part2p1(path_to_img_folder):
             sharpened = unsharp(small_img, kernel, sigma, alpha)
             save_img(f"{path_to_img_folder}/{name}_sharpened_alpha{alpha:g}.jpg", clip_uint8(sharpened))
 
-    # Blur a sharp image, sharpen it again, and see how close it gets back to the original
+    # Blur a sharp image, then sharpen it again and compare the result with the original by eye
     img = cv2.imread(os.path.join(path_to_img_folder, "taj.jpg"), cv2.IMREAD_COLOR)
     blurred = clip_uint8(convol_symm_with_scipy(img, gaussian_kernel_cv(11, 1.5)))
     save_img(f"{path_to_img_folder}/taj_test_blurred.jpg", blurred)
-    print(f"blurred (sigma 1.5): PSNR vs original {psnr(blurred, img):.2f} dB")
-    for alpha in [0.5, 1, 2, 3, 4]:
-        recovered = clip_uint8(unsharp(blurred, 11, 1.5, alpha))
-        print(f"sharpened again, alpha {alpha:g}: PSNR vs original {psnr(recovered, img):.2f} dB")
-        if alpha == 2:
-            save_img(f"{path_to_img_folder}/taj_test_sharpened.jpg", recovered)
+    save_img(f"{path_to_img_folder}/taj_test_sharpened.jpg", clip_uint8(unsharp(blurred, 11, 1.5, 2)))
 
 def load_rgb(path):
     # cv2 reads BGR and applies the photo's rotation, convert to RGB floats in 0 to 1 like the starter code

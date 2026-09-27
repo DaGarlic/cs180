@@ -44,40 +44,11 @@
   <h3>Padding</h3>
   <p class="setup">
     Both versions pad the image with zeros first so the kernel can be centered on the
-    edge pixels. For an image of size H&times;W and a kernel of size kh&times;kw:
+    edge pixels.
   </p>
 
-  <table class="data-table">
-    <thead><tr><th>Mode</th><th>Top / left padding</th><th>Bottom / right padding</th><th>Output size</th></tr></thead>
-    <tbody>
-      <tr><td>same</td><td class="num">kh&minus;1&minus;(kh&minus;1)//2 &nbsp;/&nbsp; kw&minus;1&minus;(kw&minus;1)//2</td><td class="num">(kh&minus;1)//2 &nbsp;/&nbsp; (kw&minus;1)//2</td><td class="num">H &times; W</td></tr>
-      <tr><td>full</td><td class="num">kh&minus;1 &nbsp;/&nbsp; kw&minus;1</td><td class="num">kh&minus;1 &nbsp;/&nbsp; kw&minus;1</td><td class="num">(H+kh&minus;1) &times; (W+kw&minus;1)</td></tr>
-    </tbody>
-  </table>
 
-  <p class="setup">
-    For an odd kernel, "same" padding is just <code>k//2</code> on every side. For an even one,
-    like the 1&times;2 Dx and 2&times;1 Dy below, the padding can't be symmetric, so the extra
-    row or column goes on the top or left. That choice is what makes the output line up
-    with <code>scipy</code>'s <code>mode="same"</code>.
-  </p>
 
-<pre class="code"><code>def pad_img(image, kernel, mode="same"):
-    # Zero pad the image ("same" keeps the output size, "full" gives every position the kernel overlaps)
-    height, width = image.shape[:2]
-    kernel_h, kernel_w = len(kernel), len(kernel[0])
-    if mode == "full":
-        top, left = kernel_h - 1, kernel_w - 1
-        bottom, right = kernel_h - 1, kernel_w - 1
-    elif mode == "same":
-        bottom, right = (kernel_h - 1) // 2, (kernel_w - 1) // 2
-        top, left = kernel_h - 1 - bottom, kernel_w - 1 - right
-    else:
-        raise ValueError(f"Unknown padding mode: {mode}")
-
-    padded_image = np.zeros((height + top + bottom, width + left + right))
-    padded_image[top:top + height, left:left + width] = image
-    return padded_image</code></pre>
 
   <h3>Four loops</h3>
   <p class="setup">
@@ -194,7 +165,7 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
 
   <h3>Runtime</h3>
   <p class="setup">
-    I timed each implementation once on the full 1280&times;960 image, on my laptop (Python 3.12, NumPy 2.4, SciPy 1.17).
+    I timed each implementation once on the full 1280&times;960 image.
   </p>
 
   <table class="data-table runtime">
@@ -230,13 +201,6 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
     Ix of the image I in x and Dy gives the partial derivative Iy in y. The gradient magnitude,
     <code>sqrt(Ix&sup2; + Iy&sup2;)</code>, combines the two into a single edge-strength
     image that doesn't depend on which way the edge points.
-  </p>
-  <p class="setup">
-    Two things needed handling first. The cameraman file has a white frame around it (7 px
-    at the top, 5 at the right, 1 at the bottom and left), which would show up as a strong
-    fake edge all the way round, so I crop it off, leaving 534&times;534. And zero padding
-    makes the first column of Dx and the first row of Dy raw pixel values instead of
-    differences, so I set those to zero.
   </p>
 
   <div class="grid2">
@@ -519,7 +483,7 @@ def unsharp(image, kernel, sigma, alpha=1.0):
   <p class="setup">
     To see how much sharpening can win back, I blurred <code>taj.jpg</code> with a stronger 11&times;11
     Gaussian (&sigma;&nbsp;=&nbsp;1.5), sharpened that with the same Gaussian, and compared the result
-    with the original by PSNR, where higher means closer.
+    with the original by eye. I used &alpha;&nbsp;=&nbsp;2, which brought the edges back without visible halos.
   </p>
 
   <div class="grid3 wide">
@@ -537,32 +501,19 @@ def unsharp(image, kernel, sigma, alpha=1.0):
     </figure>
   </div>
 
-  <table class="data-table">
-    <thead><tr><th>Image</th><th>PSNR against the original</th></tr></thead>
-    <tbody>
-      <tr><td>Blurred</td><td class="num">24.63 dB</td></tr>
-      <tr><td>Sharpened again, &alpha;&nbsp;=&nbsp;0.5</td><td class="num">25.35 dB</td></tr>
-      <tr><td>Sharpened again, &alpha;&nbsp;=&nbsp;1</td><td class="num">25.97 dB</td></tr>
-      <tr><td>Sharpened again, &alpha;&nbsp;=&nbsp;2</td><td class="num">26.66 dB</td></tr>
-      <tr><td>Sharpened again, &alpha;&nbsp;=&nbsp;3</td><td class="num">26.49 dB</td></tr>
-      <tr><td>Sharpened again, &alpha;&nbsp;=&nbsp;4</td><td class="num">25.68 dB</td></tr>
-    </tbody>
-  </table>
 
   <p class="setup">
-    Sharpening gets back some of what the blur took: the PSNR rises from 24.63 dB to 26.66 dB at
-    &alpha;&nbsp;=&nbsp;2, and the edges of the arches and the trees look crisper again. It doesn't restore
+    Sharpening gets back some of what the blur took: the edges of the arches and the trees look crisper
+    again, and the result is clearly closer to the original than the blurred image is. It doesn't restore
     the original, though. Detail that the blur wiped out completely, like the fine carving on the
-    dome, can't come back, because sharpening only amplifies what is left. Past &alpha;&nbsp;=&nbsp;2 the
-    score falls again, since the halos and the amplified errors start to outweigh the recovered edges.
+    dome, can't come back, because sharpening only amplifies what is left. Pushing &alpha; higher only adds
+    halos and noise, as in Figure 15d.
   </p>
 
   <h3>Other images</h3>
   <p class="setup">
     I ran the same procedure on two of my own photos, a plate of duck and fish in an aquarium, both
-    slightly out of focus. I shrank them to 1000 px on the long side and used a 9&times;9 Gaussian with
-    &sigma;&nbsp;=&nbsp;2, because the blur in them spans more pixels than in <code>taj.jpg</code>, with
-    &alpha;&nbsp;=&nbsp;1.
+    slightly out of focus.
   </p>
 
   <div class="grid2">
@@ -658,7 +609,7 @@ def hybrid_image(im1, im2, sigma1, sigma2):
     low ones.
   </p>
 
-  <div class="grid2">
+  <div class="grid2 compact">
     <figure>
       <a href="media/DerekPicture.jpg" target="_blank" rel="noopener"><img src="media/DerekPicture.jpg" width="732" height="1024" loading="lazy" alt="Portrait of Derek, a man with short dark hair smiling, in a black shirt against a gray background"></a>
       <figcaption><b>Figure 19a.</b> Derek, the high-frequency image.</figcaption>
@@ -732,17 +683,25 @@ def hybrid_image(im1, im2, sigma1, sigma2):
 
   <h3>Viewing it</h3>
   <p class="setup">
-    Look at the large copy in Figure 22 from close up, where you should see Derek. Then step back from the screen, or
-    zoom the page out, and Nutmeg should take over. The small copy next to it is the same image shrunk, which is
-    roughly what it looks like from far away.
+    Drag the slider in Figure 22 to move away from a hybrid. Close up you should see the high-frequency image,
+    and as it gets smaller the low-frequency one takes over. The buttons switch between all four hybrids.
   </p>
 
-  <figure class="narrow">
-    <div class="viewing-row">
-      <a href="media/derek_nutmeg_hybrid.jpg" target="_blank" rel="noopener"><img class="near" src="media/derek_nutmeg_hybrid.jpg" width="433" height="686" loading="lazy" alt="The Derek and Nutmeg hybrid shown large"></a>
-      <a href="media/derek_nutmeg_hybrid.jpg" target="_blank" rel="noopener"><img class="far" src="media/derek_nutmeg_hybrid.jpg" width="433" height="686" loading="lazy" alt="The same hybrid shrunk to a small size, where it looks like a cat"></a>
+  <figure class="narrow viewer" id="viewer">
+    <div class="viewer-stage">
+      <img src="media/derek_nutmeg_hybrid.jpg" width="433" height="686" alt="The Derek and Nutmeg hybrid">
     </div>
-    <figcaption><b>Figure 22.</b> The hybrid at two sizes. Close up it is Derek, and small it is Nutmeg.</figcaption>
+    <div class="viewer-controls">
+      <div class="viewer-tabs" role="group" aria-label="Choose a hybrid">
+        <button type="button" class="on" aria-pressed="true" data-src="media/derek_nutmeg_hybrid.jpg" data-w="433" data-h="686" data-alt="The Derek and Nutmeg hybrid">Derek and Nutmeg</button>
+        <button type="button" aria-pressed="false" data-src="media/labubu_hybrid.jpg" data-w="513" data-h="715" data-alt="The labubu hybrid">Labubu</button>
+        <button type="button" aria-pressed="false" data-src="media/dessert_hybrid.jpg" data-w="576" data-h="862" data-alt="The dessert hybrid">Dessert</button>
+        <button type="button" aria-pressed="false" data-src="media/bird_hybrid.jpg" data-w="405" data-h="540" data-alt="The bird hybrid">Bird</button>
+      </div>
+      <label class="viewer-slider"><span>Close</span><input type="range" min="0" max="100" value="0" aria-label="Distance from the hybrid"><span>Far</span></label>
+      <output>Close up</output>
+    </div>
+    <figcaption><b>Figure 22.</b> The four hybrids, seen from a distance you choose.</figcaption>
   </figure>
 
   <h3>Cutoff frequencies</h3>
@@ -838,5 +797,47 @@ def hybrid_image(im1, im2, sigma1, sigma2):
   </p>
 
 </main>
+
+<script>
+(function () {
+  // side navigation: highlight the section being read
+  var links = document.querySelectorAll('.topnav a[href^="#"]');
+  var heads = [];
+  links.forEach(function (a) {
+    var h = document.getElementById(a.getAttribute('href').slice(1));
+    if (h) heads.push({ a: a, h: h });
+  });
+  function spy() {
+    var line = window.scrollY + window.innerHeight * 0.3, current = null;
+    heads.forEach(function (x) { if (x.h.getBoundingClientRect().top + window.scrollY <= line) current = x.a; });
+    links.forEach(function (a) { a.classList.toggle('active', a === current); });
+  }
+  window.addEventListener('scroll', spy, { passive: true });
+  window.addEventListener('resize', spy);
+  spy();
+
+  // distance slider: a hybrid is shown smaller and smaller as you move away from it
+  var v = document.getElementById('viewer');
+  if (v) {
+    var img = v.querySelector('.viewer-stage img'), range = v.querySelector('input[type=range]');
+    var out = v.querySelector('output'), tabs = v.querySelectorAll('.viewer-tabs button');
+    var maxH = 270, minH = 40;
+    function draw() {
+      var t = range.value / 100, h = maxH * Math.pow(minH / maxH, t);
+      img.style.height = h.toFixed(1) + 'px';
+      out.textContent = t === 0 ? 'Close up' : (maxH / h).toFixed(1) + '\u00d7 farther away';
+    }
+    range.addEventListener('input', draw);
+    tabs.forEach(function (b) {
+      b.addEventListener('click', function () {
+        tabs.forEach(function (o) { o.classList.toggle('on', o === b); o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+        img.src = b.dataset.src; img.width = +b.dataset.w; img.height = +b.dataset.h; img.alt = b.dataset.alt;
+      });
+    });
+    v.classList.add('ready');
+    draw();
+  }
+})();
+</script>
 </body>
 </html>
