@@ -602,7 +602,8 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
     The two images have to line up, or the low-frequency image reads as a different thing behind the detail. I pick
     two matching points on each image, the eyes for Derek and Nutmeg, and the course starter code translates,
     scales and rotates the first image so that the two points land on top of each other. I picked the points by
-    hand and stored them in the code instead of clicking them. The alignment pads and rotates in black borders, so
+    hand and stored them in the code instead of clicking them. Before any of this, I convert both images of every pair
+    to grayscale, so that the hybrid depends only on brightness and the two frequency bands don't fight over color. The alignment pads and rotates in black borders, so
     I then crop both images to the largest rectangle that is real picture in both.
   </p>
 
@@ -653,8 +654,7 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
   </div>
 
   <p class="setup">
-    Figure 21 shows the log magnitude of the 2D Fourier transform of the grayscale version of each image, all on the
-    same brightness scale, with the lowest frequencies in the center. The two inputs have energy at all
+    Figure 21 shows the log magnitude of the 2D Fourier transform of each image, all on the same brightness scale, with the lowest frequencies in the center. The two inputs have energy at all
     frequencies. Derek's high-pass image (21c) has an empty center, because the low frequencies were subtracted
     out. Nutmeg's low-pass image (21d) is bright only near the center and dark further out, because everything above
     the cutoff was blurred away. The hybrid (21e) has both: Nutmeg's low frequencies in the middle and Derek's
@@ -742,8 +742,8 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
 
   <h3>More hybrids</h3>
   <p class="setup">
-    These use my own photos. For each one the two inputs are shown in the order high frequencies, then low
-    frequencies, followed by the hybrid. Together with Derek and Nutmeg they morph a person into a cat, one doll into another and one dessert into
+    These use my own photos. For each one the two inputs are shown in color, in the order high frequencies,
+    then low frequencies, followed by the hybrid, which is made from their grayscale versions. Together with Derek and Nutmeg they morph a person into a cat, one doll into another and one dessert into
     another, and one of them changes the viewpoint instead of the subject.
   </p>
 
@@ -757,14 +757,14 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
       <figcaption><b>Figure 23b.</b> Brown doll, low frequencies.</figcaption>
     </figure>
     <figure>
-      <a href="media/labubu_hybrid.jpg" target="_blank" rel="noopener"><img src="media/labubu_hybrid.jpg" width="513" height="715" loading="lazy" alt="The hybrid: a brown plush doll with the purple doll's face lines over it"></a>
+      <a href="media/labubu_hybrid.jpg" target="_blank" rel="noopener"><img src="media/labubu_hybrid.jpg" width="513" height="715" loading="lazy" alt="The hybrid: a dark plush doll with the fine lines of a second doll's face over it"></a>
       <figcaption><b>Figure 23c.</b> The hybrid, aligned on the eyes.</figcaption>
     </figure>
   </div>
 
   <p class="setup">
     The two dolls are held in almost the same pose, so aligning on their eyes lines up the faces. Up close you see the
-    purple doll's fur and face detail, and from far away it turns into the brown one.
+    purple doll's fur and face detail, and from far away it turns into the darker, brown one.
   </p>
 
   <div class="grid3">
@@ -777,7 +777,7 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
       <figcaption><b>Figure 24b.</b> Red pastry, low frequencies.</figcaption>
     </figure>
     <figure>
-      <a href="media/dessert_hybrid.jpg" target="_blank" rel="noopener"><img src="media/dessert_hybrid.jpg" width="576" height="862" loading="lazy" alt="The hybrid: the peaks of the meringue drawn over a red round pastry"></a>
+      <a href="media/dessert_hybrid.jpg" target="_blank" rel="noopener"><img src="media/dessert_hybrid.jpg" width="576" height="862" loading="lazy" alt="The hybrid: the peaks of the meringue drawn over a dark round pastry"></a>
       <figcaption><b>Figure 24c.</b> The hybrid, aligned on the pastries.</figcaption>
     </figure>
   </div>
@@ -785,7 +785,7 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
   <p class="setup">
     This one morphs one dessert into another. I swapped the roles compared with the other pairs, because it looks
     better with the tart's sharp meringue peaks on top: they are drawn over the red pastry up close, and from far away
-    only the red round shape is left.
+    only the dark round shape of the pastry is left.
   </p>
 
   <div class="grid3">

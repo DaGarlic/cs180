@@ -62,6 +62,11 @@ def rgb_to_bgr_uint8(image):
     # RGB floats in 0 to 1 back to something cv2 can save
     return cv2.cvtColor(clip_uint8(image * 255), cv2.COLOR_RGB2BGR)
 
+def to_gray(image):
+    # Grayscale version of an RGB image, still with 3 channels (all equal) so the other functions can take it
+    gray = cv2.cvtColor(image.astype(np.float32), cv2.COLOR_RGB2GRAY)
+    return np.dstack([gray, gray, gray])
+
 def log_spectrum(image):
     # Log magnitude of the 2D Fourier transform of the grayscale image, low frequencies in the center
     gray = cv2.cvtColor(image.astype(np.float32), cv2.COLOR_RGB2GRAY)
@@ -79,8 +84,9 @@ def run_part2p2(path_to_img_folder):
         ("dessert", "dessert_pair_2.jpg", "dessert_pair_1.jpg", ((350, 236), (350, 636), (357, 214), (436, 671)), 7, 15, 1.5),
     ]
     for name, high_name, low_name, pts, sigma_high, sigma_low, gain in hybrids:
-        im1 = load_rgb(os.path.join(path_to_img_folder, high_name))
-        im2 = load_rgb(os.path.join(path_to_img_folder, low_name))
+        # Convert both images to grayscale first, so the hybrid only depends on brightness
+        im1 = to_gray(load_rgb(os.path.join(path_to_img_folder, high_name)))
+        im2 = to_gray(load_rgb(os.path.join(path_to_img_folder, low_name)))
 
         # Align the two images, then crop off the black borders that the alignment leaves
         aligned1, aligned2 = align_images(im1, im2, pts)
