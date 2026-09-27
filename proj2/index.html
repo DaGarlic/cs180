@@ -945,7 +945,7 @@ def laplacian_stack(gaussian):
     without a visible edge, which is what this section adds.
   </p>
 
-  <h3>Irregular mask</h3>
+  <h3>Irregular / creative mask</h3>
   <p class="setup">
     The two source images are a "this is fine" panel and a still of Spongebob relaxing in his living room. Spongebob
     is cut out of his photo with <code>cv2.grabCut</code>, seeded with a rectangle around his head and torso that
@@ -1028,12 +1028,6 @@ def composite_masked(base, overlay, overlay_mask, top, left):
     <figcaption><b>Figure 36.</b> Spongebob and the fire scene weighted by the mask at three levels, and the total over all levels.</figcaption>
   </figure>
 
-  <p class="setup">
-    Together with the straight-seam Oraple and plush blends from Part 2.3, this covers the two additional pairs the
-    assignment asks for, with an irregular mask on this one, and doubles as the creative example: a cartoon character
-    dropped into an unrelated scene he was never photographed in, standing in for the dog without redrawing anything
-    by hand.
-  </p>
 
 </main>
 
