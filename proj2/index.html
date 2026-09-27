@@ -558,29 +558,27 @@ def unsharp(image, kernel, sigma, alpha=1.0):
     low frequencies of another. Up close the eye picks up the fine detail, so you see the first image. From far
     away that detail is too small to see, and only the low frequencies are left, so you see the second. I take the
     high frequencies of <i>I</i><sub>1</sub> as the image minus its Gaussian blur, which is the same as convolving
-    it with an impulse minus a Gaussian, scale them by a gain <i>k</i>, and add the blur of <i>I</i><sub>2</sub>:
+    it with an impulse minus a Gaussian, and add the blur of <i>I</i><sub>2</sub>:
   </p>
 
-  <math display="block" class="eq" aria-label="H equals k times the quantity I 1 minus I 1 convolved with G sigma 1, plus I 2 convolved with G sigma 2, which equals I 1 convolved with k times the quantity delta minus G sigma 1, plus I 2 convolved with G sigma 2">
+  <math display="block" class="eq" aria-label="H equals the quantity I 1 minus I 1 convolved with G sigma 1, plus I 2 convolved with G sigma 2, which equals I 1 convolved with the quantity delta minus G sigma 1, plus I 2 convolved with G sigma 2">
     <mrow>
       <mi>H</mi><mo>=</mo>
-      <mi>k</mi><mo>(</mo><msub><mi>I</mi><mn>1</mn></msub><mo>&minus;</mo><msub><mi>I</mi><mn>1</mn></msub><mo>&lowast;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>1</mn></msub></msub><mo>)</mo>
+      <mo>(</mo><msub><mi>I</mi><mn>1</mn></msub><mo>&minus;</mo><msub><mi>I</mi><mn>1</mn></msub><mo>&lowast;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>1</mn></msub></msub><mo>)</mo>
       <mo>+</mo><msub><mi>I</mi><mn>2</mn></msub><mo>&lowast;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>2</mn></msub></msub>
     </mrow>
   </math>
-  <math display="block" class="eq" aria-label="which equals I 1 convolved with k times the quantity delta minus G sigma 1, plus I 2 convolved with G sigma 2">
+  <math display="block" class="eq" aria-label="which equals I 1 convolved with the quantity delta minus G sigma 1, plus I 2 convolved with G sigma 2">
     <mrow>
       <mo>=</mo>
-      <msub><mi>I</mi><mn>1</mn></msub><mo>&lowast;</mo><mi>k</mi><mo>(</mo><mi>&delta;</mi><mo>&minus;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>1</mn></msub></msub><mo>)</mo>
+      <msub><mi>I</mi><mn>1</mn></msub><mo>&lowast;</mo><mo>(</mo><mi>&delta;</mi><mo>&minus;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>1</mn></msub></msub><mo>)</mo>
       <mo>+</mo><msub><mi>I</mi><mn>2</mn></msub><mo>&lowast;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>2</mn></msub></msub>
     </mrow>
   </math>
 
   <p class="setup">
     Here <i>G</i><sub>&sigma;</sub> is a Gaussian with standard deviation &sigma; pixels, &delta; is the unit impulse, and
-    &sigma;<sub>1</sub> and &sigma;<sub>2</sub> set the two cutoff frequencies. The gain <i>k</i>
-    makes the high frequencies stronger than in the original image, because a plain difference of two blurs is faint
-    next to the low frequencies and the hybrid otherwise reads as a mix of both images up close. The blur is done as two 1D passes,
+    &sigma;<sub>1</sub> and &sigma;<sub>2</sub> set the two cutoff frequencies. The blur is done as two 1D passes,
     because the &sigma; needed here would make a single 2D kernel slow.
   </p>
 
@@ -590,10 +588,9 @@ def unsharp(image, kernel, sigma, alpha=1.0):
     kernel_1d = cv2.getGaussianKernel(size, sigma)
     return convol_symm_with_scipy(convol_symm_with_scipy(image, kernel_1d), kernel_1d.T)
 
-def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
-    # High frequencies of im1 (the image minus its blur, times a gain so they stand out) plus the low
-    # frequencies of im2 (its blur)
-    high = gain * (im1 - gaussian_blur(im1, sigma1))
+def hybrid_image(im1, im2, sigma1, sigma2):
+    # High frequencies of im1 (the image minus its blur) plus the low frequencies of im2 (its blur)
+    high = im1 - gaussian_blur(im1, sigma1)
     low = gaussian_blur(im2, sigma2)
     return high + low</code></pre>
 
@@ -626,7 +623,7 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
 
   <p class="setup">
     Figure 20 shows each step. The two aligned images (20a and 20b) are cropped to 433&times;686. Derek's image has
-    its blur removed (&sigma;<sub>1</sub>&nbsp;=&nbsp;2.5), leaving only the edges (20c, doubled and shifted to mid gray),
+    its blur removed (&sigma;<sub>1</sub>&nbsp;=&nbsp;4), leaving only the edges (20c, shifted to mid gray),
     and Nutmeg's is blurred (&sigma;<sub>2</sub>&nbsp;=&nbsp;12, 20d). Adding them gives the hybrid (20e).
   </p>
 
@@ -709,33 +706,32 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
 
   <h3>Cutoff frequencies</h3>
   <p class="setup">
-    I tuned &sigma;<sub>1</sub>, &sigma;<sub>2</sub> and the gain separately for each pair, by making a hybrid for many
+    I tuned &sigma;<sub>1</sub> and &sigma;<sub>2</sub> separately for each pair, by making a hybrid for many
     combinations and judging every one twice: at the size the slider starts at, for the near view, and shrunk to about a
-    fifth of that for the far view. A good hybrid needs both, and the two pull against each other. A small
-    &sigma;<sub>1</sub> keeps only the finest detail, which disappears when the image is shrunk, so the second image
-    takes over, but it also leaves less of the first image to see up close. A larger &sigma;<sub>2</sub> removes more
-    of the second image's detail from the near view, but leaves only a smear from far away. Raising the gain fixes part
-    of that, since it makes the first image stronger up close without changing which frequencies it contributes.
+    fifth of that for the far view. A good hybrid needs both, and the two pull against each other. A large
+    &sigma;<sub>1</sub> lowers the high-pass cutoff, so more of the first image gets through and it is stronger up
+    close, but the extra mid-frequency detail is still visible after shrinking, so the first image also shows from far
+    away. A small &sigma;<sub>1</sub> keeps only the finest detail, which disappears when shrunk, but leaves less of the
+    first image to see up close. A larger &sigma;<sub>2</sub> removes more of the second image's detail from the near
+    view, but leaves less of it to see from afar.
   </p>
   <p class="setup">
-    The best settings depend on the images. Derek's face and Nutmeg's fur are large, and both look right at
-    &sigma;<sub>1</sub>&nbsp;=&nbsp;2.5 and &sigma;<sub>2</sub>&nbsp;=&nbsp;12. For my own photos I pushed
-    &sigma;<sub>1</sub> up, which lowers the high-pass cutoff so that more of the first image gets through: 6 for
-    the labubu, 7 for the dessert (a larger photo, 862 px tall against 686 for Derek) and 3 for the bird. The price is
-    a weaker far view, because the extra mid-frequency detail from the first image is still visible after shrinking, so
-    I paired the larger &sigma;<sub>1</sub> with a smaller gain of 1.5 and, for the dessert, a wider low-pass
-    (&sigma;<sub>2</sub>&nbsp;=&nbsp;15). The two beach photos are so much alike that the far view stays weak
-    whatever I choose, so the bird is a compromise. A Gaussian with standard deviation &sigma; pixels has a frequency
-    response that falls to 61% at 1/(2&pi;&sigma;) cycles per pixel, which I take as the cutoff.
+    I first tuned these on the color images, and tuned them again after converting to grayscale, because without color
+    the far view has to work on brightness alone. It came out best with a low cutoff for the first image and a wider
+    blur for the second in every pair: &sigma;<sub>1</sub>&nbsp;=&nbsp;4 and &sigma;<sub>2</sub>&nbsp;=&nbsp;12 for
+    Derek and Nutmeg, 5 and 16 for the labubu, 7 and 16 for the dessert (a larger photo, 862 px tall against 686 for
+    Derek), and 3 and 8 for the bird. The two beach photos are so much alike that the far view stays weak whatever I
+    choose, so the bird is a compromise. A Gaussian with standard deviation &sigma; pixels has a frequency response that
+    falls to 61% at 1/(2&pi;&sigma;) cycles per pixel, which I take as the cutoff.
   </p>
 
   <table class="data-table">
-    <thead><tr><th>Hybrid</th><th>High frequencies from</th><th>Low frequencies from</th><th>High-pass</th><th>Low-pass</th><th>Gain</th></tr></thead>
+    <thead><tr><th>Hybrid</th><th>High frequencies from</th><th>Low frequencies from</th><th>High-pass</th><th>Low-pass</th></tr></thead>
     <tbody>
-      <tr><td>Derek and Nutmeg</td><td>Derek</td><td>Nutmeg</td><td class="num">&sigma; = 2.5 (0.064)</td><td class="num">&sigma; = 12 (0.013)</td><td class="num">2</td></tr>
-      <tr><td>Labubu</td><td>Purple doll</td><td>Brown doll</td><td class="num">&sigma; = 6 (0.027)</td><td class="num">&sigma; = 12 (0.013)</td><td class="num">1.5</td></tr>
-      <tr><td>Bird</td><td>First beach photo</td><td>Second beach photo</td><td class="num">&sigma; = 3 (0.053)</td><td class="num">&sigma; = 8 (0.020)</td><td class="num">1.5</td></tr>
-      <tr><td>Dessert</td><td>Meringue tart</td><td>Red pastry</td><td class="num">&sigma; = 7 (0.023)</td><td class="num">&sigma; = 15 (0.011)</td><td class="num">1.5</td></tr>
+      <tr><td>Derek and Nutmeg</td><td>Derek</td><td>Nutmeg</td><td class="num">&sigma; = 4 (0.040)</td><td class="num">&sigma; = 12 (0.013)</td></tr>
+      <tr><td>Labubu</td><td>Purple doll</td><td>Brown doll</td><td class="num">&sigma; = 5 (0.032)</td><td class="num">&sigma; = 16 (0.010)</td></tr>
+      <tr><td>Bird</td><td>First beach photo</td><td>Second beach photo</td><td class="num">&sigma; = 3 (0.053)</td><td class="num">&sigma; = 8 (0.020)</td></tr>
+      <tr><td>Dessert</td><td>Meringue tart</td><td>Red pastry</td><td class="num">&sigma; = 7 (0.023)</td><td class="num">&sigma; = 16 (0.010)</td></tr>
     </tbody>
   </table>
   <p class="sub" style="max-width:40rem">&sigma; is in pixels, and the cutoff in cycles per pixel is in brackets.</p>
