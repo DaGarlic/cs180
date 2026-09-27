@@ -415,8 +415,11 @@ math.eq {
 
 /* --- print ---------------------------------------------------- */
 
+.print-only { display: none; }
+
 @media print {
   .topnav { display: none; }
+  .print-only { display: block; }
   body { background: #fff; color: #000; }
   a, .toc a, figcaption b, .secno { color: #000; }
   pre.code { background: #fff; border-color: #999; border-left-color: #000; }
