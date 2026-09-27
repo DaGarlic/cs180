@@ -18,7 +18,57 @@ body {
   color: var(--ink);
 }
 
-.doc { padding-top: 4.25rem; }
+.doc { padding-top: 3rem; }
+
+/* --- top navigation bar ----------------------------------------------- */
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(250, 247, 241, .93);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--rule);
+}
+.topnav-in {
+  max-width: 42.5rem;
+  margin: 0 auto;
+  padding: .8rem 1.25rem;
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  font-family: var(--sans);
+  font-size: .76rem;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+.topnav-in::-webkit-scrollbar { display: none; }
+.topnav a {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+.topnav a:hover { color: var(--accent); }
+.topnav .no {
+  color: var(--accent);
+  font-weight: 600;
+  margin-right: .25em;
+}
+.topnav .home {
+  color: var(--ink);
+  font-weight: 600;
+  padding-right: 1.5rem;
+  border-right: 1px solid var(--rule);
+}
+
+/* headings jumped to from the bar shouldn't land underneath it */
+h2[id] { scroll-margin-top: 3.4rem; }
 
 /* --- headings ----------------------------------------------------- */
 
@@ -278,6 +328,7 @@ math.eq {
 /* --- print ---------------------------------------------------- */
 
 @media print {
+  .topnav { display: none; }
   body { background: #fff; color: #000; }
   a, .toc a, figcaption b, .secno { color: #000; }
   pre.code { background: #fff; border-color: #999; border-left-color: #000; }
