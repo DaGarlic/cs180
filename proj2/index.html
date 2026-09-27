@@ -571,12 +571,12 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
 
   <h3>Aligning the images</h3>
   <p class="setup">
-    The two images have to line up, or the low-frequency image reads as a different thing behind the detail. Two matching points are picked on each image, and the course starter code translates, scales and rotates the first image so that the two points land on top of each other. The points were picked by hand and stored in the code instead of clicked: the top and bottom of each dessert, the eyes for the person and the cat and for the two dolls, and two points along the railing for the gulls. Both images of every pair are converted to grayscale first, so that the hybrid depends only on brightness and the two frequency bands don't fight over color. The alignment pads and rotates in black borders, so both images are then cropped to the largest rectangle that is real picture in both.
+    The two images have to line up, or the low-frequency image reads as a different thing behind the detail. Two matching points are picked on each image, and the course starter code translates, scales and rotates the first image so that the two points land on top of each other. The eyes are used for the person and the cat and for the two dolls, and two points along the railing for the gulls. Both images of every pair are converted to grayscale first, so that the hybrid depends only on brightness and the two frequency bands don't fight over color. 
   </p>
 
   <h3>Dessert</h3>
   <p class="setup">
-    Figures 19 to 21 walk through every step of the dessert hybrid, the favorite of the set. The meringue tart supplies the high frequencies and the red pastry the low ones, because the tart's sharp meringue peaks read best drawn on top. The two are aligned on the top of each dessert and the bottom of its gold base.
+    Figures 19 to 21 walk through every step of the dessert hybrid, the favorite of the set. The meringue tart supplies the high frequencies and the red pastry the low ones. The two are aligned on the top of each dessert and the bottom of its gold base.
   </p>
 
   <div class="grid2 compact">
@@ -622,12 +622,7 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
   <p class="setup">
     Figure 21 shows the log magnitude of the 2D Fourier transform of each image, all on the same brightness scale,
     with the lowest frequencies in the center. The two inputs have energy at all frequencies, brightest at the center
-    and fading outwards. The tart's high-pass image (21c) matches them at high frequencies but is dimmer near the
-    center, inside about 0.03 cycles per pixel, because the low frequencies were subtracted out. The cutoff is low here
-    (&sigma;<sub>1</sub>&nbsp;=&nbsp;7 is 0.023 cycles per pixel), so the dim patch is small. The pastry's low-pass
-    image (21d) is brightest at the center and falls off steadily toward the edges, because everything above the cutoff
-    was blurred away, so it is much darker than the others at high frequencies. The hybrid (21e) looks like the inputs:
-    the tart supplies its high frequencies and the pastry fills the center back in. The bright cross through the center
+    and fading outwards.  The bright cross through the center
     of each spectrum comes from the image borders.
   </p>
 
