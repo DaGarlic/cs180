@@ -1,4 +1,4 @@
-from helper import unsharp, convol_symm_with_scipy, gaussian_kernel_cv, align_images, crop_to_valid, gaussian_blur, hybrid_image, gaussian_stack, laplacian_stack, blend_stacks
+from helper import unsharp, convol_symm_with_scipy, gaussian_kernel_cv, align_images, crop_to_valid, gaussian_blur, hybrid_image, gaussian_stack, laplacian_stack, blend_stacks, match_at_seam
 from part1 import save_img
 import os
 import cv2
@@ -136,17 +136,22 @@ def make_montage(tiles, row_labels, tile_labels=None, headers=None, tile_size=30
     return np.array(canvas)[:, :, ::-1]
 
 def run_part2p3(path_to_img_folder):
-    # (name, first image, second image, names to show, sigma of the first blurred level). The left half of the blend
-    # is the first image. The blur doubles at every level, so the smaller Oraple images start at a smaller sigma
+    # (name, first image, second image, names to show, sigma of the first blurred level, whether to line the second image
+    # up with the first at the seam). The left half of the blend is the first image. The blur doubles at every level, so
+    # the smaller Oraple images start at a smaller sigma
     pairs = [
-        ("oraple", "apple.jpeg", "orange.jpeg", ("apple", "orange"), 2),
-        ("plush", "pikachu.jpg", "charizard.jpg", ("pikachu", "charizard"), 4),
+        ("oraple", "apple.jpeg", "orange.jpeg", ("apple", "orange"), 2, False),
+        ("plush", "pikachu.jpg", "charizard.jpg", ("pikachu", "charizard"), 4, True),
     ]
     levels = 5
     band_gain = 3
-    for pair, name1, name2, names, sigma in pairs:
+    for pair, name1, name2, names, sigma, match_seam in pairs:
         im1 = load_rgb(os.path.join(path_to_img_folder, name1))
         im2 = load_rgb(os.path.join(path_to_img_folder, name2))
+        if match_seam:
+            im2, scale, shift = match_at_seam(im2, im1)
+            print(f"{pair}: second image scaled by {scale:.3f} and shifted to cover the same rows as the first at the seam")
+            save_img(f"{path_to_img_folder}/{pair}_{names[1]}_aligned.jpg", rgb_to_bgr_uint8(im2))
         blur_labels = ["original"] + [f"\u03c3 = {sigma * 2 ** (i - 1)}" for i in range(1, levels)]
 
         # Gaussian and Laplacian stacks of both images, shown as a montage per image. The band-pass levels of the

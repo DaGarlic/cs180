@@ -262,3 +262,18 @@ def blend_stacks(laplacian_a, laplacian_b, mask_gaussian):
     # and level i of the second by what is left. Returns every blended level, and their sum is the blended image
     mask = mask_gaussian[..., np.newaxis]
     return mask * laplacian_a + (1 - mask) * laplacian_b
+
+def match_at_seam(image, reference, white=0.94):
+    # Scale an image about its center column and shift it up or down so the figure in it covers the same rows at the seam
+    # (the center column) as the figure in reference does. Both are on a white background, and new space is filled with white
+    def extent(im):
+        rows = np.where((im[:, im.shape[1] // 2] < white).any(axis=1))[0]
+        return rows.min(), rows.max()
+    top_ref, bottom_ref = extent(reference)
+    top, bottom = extent(image)
+    scale = (bottom_ref - top_ref) / (bottom - top)
+    shift = top_ref - scale * top
+    matrix = np.array([[scale, 0, image.shape[1] / 2 * (1 - scale)], [0, scale, shift]])
+    warped = cv2.warpAffine(image.astype(np.float32), matrix, (image.shape[1], image.shape[0]), flags=cv2.INTER_CUBIC,
+                            borderMode=cv2.BORDER_CONSTANT, borderValue=(1, 1, 1))
+    return np.clip(warped, 0, 1).astype(float), scale, shift
