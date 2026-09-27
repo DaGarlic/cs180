@@ -558,27 +558,29 @@ def unsharp(image, kernel, sigma, alpha=1.0):
     low frequencies of another. Up close the eye picks up the fine detail, so you see the first image. From far
     away that detail is too small to see, and only the low frequencies are left, so you see the second. I take the
     high frequencies of <i>I</i><sub>1</sub> as the image minus its Gaussian blur, which is the same as convolving
-    it with an impulse minus a Gaussian, and add the blur of <i>I</i><sub>2</sub>:
+    it with an impulse minus a Gaussian, scale them by a gain <i>k</i>, and add the blur of <i>I</i><sub>2</sub>:
   </p>
 
-  <math display="block" class="eq" aria-label="H equals the quantity I 1 minus I 1 convolved with G sigma 1, plus I 2 convolved with G sigma 2, which equals I 1 convolved with the quantity delta minus G sigma 1, plus I 2 convolved with G sigma 2">
+  <math display="block" class="eq" aria-label="H equals k times the quantity I 1 minus I 1 convolved with G sigma 1, plus I 2 convolved with G sigma 2, which equals I 1 convolved with k times the quantity delta minus G sigma 1, plus I 2 convolved with G sigma 2">
     <mrow>
       <mi>H</mi><mo>=</mo>
-      <mo>(</mo><msub><mi>I</mi><mn>1</mn></msub><mo>&minus;</mo><msub><mi>I</mi><mn>1</mn></msub><mo>&lowast;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>1</mn></msub></msub><mo>)</mo>
+      <mi>k</mi><mo>(</mo><msub><mi>I</mi><mn>1</mn></msub><mo>&minus;</mo><msub><mi>I</mi><mn>1</mn></msub><mo>&lowast;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>1</mn></msub></msub><mo>)</mo>
       <mo>+</mo><msub><mi>I</mi><mn>2</mn></msub><mo>&lowast;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>2</mn></msub></msub>
     </mrow>
   </math>
-  <math display="block" class="eq" aria-label="which equals I 1 convolved with the quantity delta minus G sigma 1, plus I 2 convolved with G sigma 2">
+  <math display="block" class="eq" aria-label="which equals I 1 convolved with k times the quantity delta minus G sigma 1, plus I 2 convolved with G sigma 2">
     <mrow>
       <mo>=</mo>
-      <msub><mi>I</mi><mn>1</mn></msub><mo>&lowast;</mo><mo>(</mo><mi>&delta;</mi><mo>&minus;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>1</mn></msub></msub><mo>)</mo>
+      <msub><mi>I</mi><mn>1</mn></msub><mo>&lowast;</mo><mi>k</mi><mo>(</mo><mi>&delta;</mi><mo>&minus;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>1</mn></msub></msub><mo>)</mo>
       <mo>+</mo><msub><mi>I</mi><mn>2</mn></msub><mo>&lowast;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>2</mn></msub></msub>
     </mrow>
   </math>
 
   <p class="setup">
     Here <i>G</i><sub>&sigma;</sub> is a Gaussian with standard deviation &sigma; pixels, &delta; is the unit impulse, and
-    &sigma;<sub>1</sub> and &sigma;<sub>2</sub> set the two cutoff frequencies. The blur is done as two 1D passes,
+    &sigma;<sub>1</sub> and &sigma;<sub>2</sub> set the two cutoff frequencies. The gain <i>k</i> sets how strong
+    the first image is next to the second: at <i>k</i>&nbsp;=&nbsp;1 the high frequencies are used as they are, and I
+    raise or lower it for a pair that needs the first or the second image to stand out more. The blur is done as two 1D passes,
     because the &sigma; needed here would make a single 2D kernel slow.
   </p>
 
@@ -588,95 +590,102 @@ def unsharp(image, kernel, sigma, alpha=1.0):
     kernel_1d = cv2.getGaussianKernel(size, sigma)
     return convol_symm_with_scipy(convol_symm_with_scipy(image, kernel_1d), kernel_1d.T)
 
-def hybrid_image(im1, im2, sigma1, sigma2):
-    # High frequencies of im1 (the image minus its blur) plus the low frequencies of im2 (its blur)
-    high = im1 - gaussian_blur(im1, sigma1)
+def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
+    # High frequencies of im1 (the image minus its blur, times a gain that sets how strong they are next to the
+    # low frequencies) plus the low frequencies of im2 (its blur)
+    high = gain * (im1 - gaussian_blur(im1, sigma1))
     low = gaussian_blur(im2, sigma2)
     return high + low</code></pre>
 
   <h3>Aligning the images</h3>
   <p class="setup">
     The two images have to line up, or the low-frequency image reads as a different thing behind the detail. I pick
-    two matching points on each image, the eyes for Derek and Nutmeg, and the course starter code translates,
-    scales and rotates the first image so that the two points land on top of each other. I picked the points by
-    hand and stored them in the code instead of clicking them. Before any of this, I convert both images of every pair
-    to grayscale, so that the hybrid depends only on brightness and the two frequency bands don't fight over color. The alignment pads and rotates in black borders, so
-    I then crop both images to the largest rectangle that is real picture in both.
+    two matching points on each image, and the course starter code translates, scales and rotates the first image so
+    that the two points land on top of each other. I picked the points by hand and stored them in the code instead of
+    clicking them: the top and bottom of each dessert, the eyes for the person and the cat and for the two dolls, and
+    two points along the railing for the gulls. Before any of this, I convert both images of every pair to grayscale,
+    so that the hybrid depends only on brightness and the two frequency bands don't fight over color. The alignment
+    pads and rotates in black borders, so I then crop both images to the largest rectangle that is real picture in both.
   </p>
 
-  <h3>Derek and Nutmeg</h3>
+  <h3>Dessert</h3>
   <p class="setup">
-    This is my favorite result, so it gets the whole process. Derek supplies the high frequencies and Nutmeg the
-    low ones.
+    This is my favorite result, so it gets the whole process. The meringue tart supplies the high frequencies and the
+    red pastry the low ones. I gave the tart the high frequencies because its sharp meringue peaks read best drawn on
+    top. I aligned the two on the top of each dessert and the bottom of its gold base.
   </p>
 
   <div class="grid2 compact">
     <figure>
-      <a href="media/DerekPicture.jpg" target="_blank" rel="noopener"><img src="media/DerekPicture.jpg" width="732" height="1024" loading="lazy" alt="Portrait of Derek, a man with short dark hair smiling, in a black shirt against a gray background"></a>
-      <figcaption><b>Figure 19a.</b> Derek, the high-frequency image.</figcaption>
+      <a href="media/dessert_pair_2.jpg" target="_blank" rel="noopener"><img src="media/dessert_pair_2.jpg" width="750" height="1000" loading="lazy" alt="A lemon meringue tart with a raspberry and a knife on a patterned plate"></a>
+      <figcaption><b>Figure 19a.</b> Meringue tart, the high-frequency image.</figcaption>
     </figure>
     <figure>
-      <a href="media/nutmeg.jpg" target="_blank" rel="noopener"><img src="media/nutmeg.jpg" width="1408" height="1056" loading="lazy" alt="Nutmeg, a long-haired tabby cat with green eyes, looking at the camera from a wooden shelf"></a>
-      <figcaption><b>Figure 19b.</b> Nutmeg, the low-frequency image.</figcaption>
+      <a href="media/dessert_pair_1.jpg" target="_blank" rel="noopener"><img src="media/dessert_pair_1.jpg" width="750" height="1000" loading="lazy" alt="A red raspberry pastry with cream on the same patterned plate"></a>
+      <figcaption><b>Figure 19b.</b> Red pastry, the low-frequency image.</figcaption>
     </figure>
   </div>
 
   <p class="setup">
-    Figure 20 shows each step. The two aligned images (20a and 20b) are cropped to 433&times;686. Derek's image has
-    its blur removed (&sigma;<sub>1</sub>&nbsp;=&nbsp;4), leaving only the edges (20c, shifted to mid gray),
-    and Nutmeg's is blurred (&sigma;<sub>2</sub>&nbsp;=&nbsp;12, 20d). Adding them gives the hybrid (20e).
+    Figure 20 shows each step. The two aligned images (20a and 20b) are cropped to 576&times;862. The tart's image has
+    its blur removed (&sigma;<sub>1</sub>&nbsp;=&nbsp;7), leaving only the edges (20c, shifted to mid gray), and the
+    pastry's is blurred (&sigma;<sub>2</sub>&nbsp;=&nbsp;16, 20d). Adding them gives the hybrid (20e).
   </p>
 
   <div class="grid5 wide">
     <figure>
-      <a href="media/derek_nutmeg_aligned1.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_aligned1.jpg" width="433" height="686" loading="lazy" alt="Derek's portrait after alignment, rotated and cropped"></a>
-      <figcaption><b>Figure 20a.</b> Derek, aligned.</figcaption>
+      <a href="media/dessert_aligned1.jpg" target="_blank" rel="noopener"><img src="media/dessert_aligned1.jpg" width="576" height="862" loading="lazy" alt="The meringue tart photo after alignment and cropping"></a>
+      <figcaption><b>Figure 20a.</b> Tart, aligned.</figcaption>
     </figure>
     <figure>
-      <a href="media/derek_nutmeg_aligned2.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_aligned2.jpg" width="433" height="686" loading="lazy" alt="Nutmeg's photo after alignment and cropping"></a>
-      <figcaption><b>Figure 20b.</b> Nutmeg, aligned.</figcaption>
+      <a href="media/dessert_aligned2.jpg" target="_blank" rel="noopener"><img src="media/dessert_aligned2.jpg" width="576" height="862" loading="lazy" alt="The red pastry photo after alignment and cropping"></a>
+      <figcaption><b>Figure 20b.</b> Pastry, aligned.</figcaption>
     </figure>
     <figure>
-      <a href="media/derek_nutmeg_high.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_high.jpg" width="433" height="686" loading="lazy" alt="Derek's high frequencies: thin light and dark outlines of his face on mid gray"></a>
-      <figcaption><b>Figure 20c.</b> Derek, high-pass.</figcaption>
+      <a href="media/dessert_high.jpg" target="_blank" rel="noopener"><img src="media/dessert_high.jpg" width="576" height="862" loading="lazy" alt="The tart's high frequencies: thin light and dark outlines of the meringue peaks, the knife and the plate pattern on mid gray"></a>
+      <figcaption><b>Figure 20c.</b> Tart, high-pass.</figcaption>
     </figure>
     <figure>
-      <a href="media/derek_nutmeg_low.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_low.jpg" width="433" height="686" loading="lazy" alt="Nutmeg's low frequencies: a heavily blurred cat"></a>
-      <figcaption><b>Figure 20d.</b> Nutmeg, low-pass.</figcaption>
+      <a href="media/dessert_low.jpg" target="_blank" rel="noopener"><img src="media/dessert_low.jpg" width="576" height="862" loading="lazy" alt="The pastry's low frequencies: a heavily blurred dark red ring on a pale plate"></a>
+      <figcaption><b>Figure 20d.</b> Pastry, low-pass.</figcaption>
     </figure>
     <figure>
-      <a href="media/derek_nutmeg_hybrid.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_hybrid.jpg" width="433" height="686" loading="lazy" alt="The hybrid: Derek's face outlines over a blurred cat"></a>
+      <a href="media/dessert_hybrid.jpg" target="_blank" rel="noopener"><img src="media/dessert_hybrid.jpg" width="576" height="862" loading="lazy" alt="The hybrid: the meringue peaks drawn over a blurred dark red pastry"></a>
       <figcaption><b>Figure 20e.</b> The hybrid.</figcaption>
     </figure>
   </div>
 
   <p class="setup">
-    Figure 21 shows the log magnitude of the 2D Fourier transform of each image, all on the same brightness scale, with the lowest frequencies in the center. The two inputs have energy at all
-    frequencies. Derek's high-pass image (21c) has an empty center, because the low frequencies were subtracted
-    out. Nutmeg's low-pass image (21d) is bright only near the center and dark further out, because everything above
-    the cutoff was blurred away. The hybrid (21e) has both: Nutmeg's low frequencies in the middle and Derek's
-    high ones around them. The bright cross through the center of each spectrum comes from the image borders.
+    Figure 21 shows the log magnitude of the 2D Fourier transform of each image, all on the same brightness scale,
+    with the lowest frequencies in the center. The two inputs have energy at all frequencies, brightest at the center
+    and fading outwards. The tart's high-pass image (21c) matches them at high frequencies but is dimmer near the
+    center, inside about 0.03 cycles per pixel, because the low frequencies were subtracted out. The cutoff is low here
+    (&sigma;<sub>1</sub>&nbsp;=&nbsp;7 is 0.023 cycles per pixel), so the dim patch is small. The pastry's low-pass
+    image (21d) is brightest at the center and falls off steadily toward the edges, because everything above the cutoff
+    was blurred away, so it is much darker than the others at high frequencies. The hybrid (21e) looks like the inputs:
+    the tart supplies its high frequencies and the pastry fills the center back in. The bright cross through the center
+    of each spectrum comes from the image borders.
   </p>
 
   <div class="grid5 wide">
     <figure>
-      <a href="media/derek_nutmeg_fft_aligned1.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_fft_aligned1.jpg" width="433" height="686" loading="lazy" alt="Fourier spectrum of the aligned Derek image"></a>
-      <figcaption><b>Figure 21a.</b> Derek.</figcaption>
+      <a href="media/dessert_fft_aligned1.jpg" target="_blank" rel="noopener"><img src="media/dessert_fft_aligned1.jpg" width="576" height="862" loading="lazy" alt="Fourier spectrum of the aligned tart image"></a>
+      <figcaption><b>Figure 21a.</b> Tart.</figcaption>
     </figure>
     <figure>
-      <a href="media/derek_nutmeg_fft_aligned2.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_fft_aligned2.jpg" width="433" height="686" loading="lazy" alt="Fourier spectrum of the aligned Nutmeg image"></a>
-      <figcaption><b>Figure 21b.</b> Nutmeg.</figcaption>
+      <a href="media/dessert_fft_aligned2.jpg" target="_blank" rel="noopener"><img src="media/dessert_fft_aligned2.jpg" width="576" height="862" loading="lazy" alt="Fourier spectrum of the aligned pastry image"></a>
+      <figcaption><b>Figure 21b.</b> Pastry.</figcaption>
     </figure>
     <figure>
-      <a href="media/derek_nutmeg_fft_high.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_fft_high.jpg" width="433" height="686" loading="lazy" alt="Fourier spectrum of Derek's high-pass image, with a dark empty center"></a>
-      <figcaption><b>Figure 21c.</b> Derek, high-pass.</figcaption>
+      <a href="media/dessert_fft_high.jpg" target="_blank" rel="noopener"><img src="media/dessert_fft_high.jpg" width="576" height="862" loading="lazy" alt="Fourier spectrum of the tart's high-pass image, with a slightly dimmer center"></a>
+      <figcaption><b>Figure 21c.</b> Tart, high-pass.</figcaption>
     </figure>
     <figure>
-      <a href="media/derek_nutmeg_fft_low.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_fft_low.jpg" width="433" height="686" loading="lazy" alt="Fourier spectrum of Nutmeg's low-pass image, bright at the center and dark toward the edges"></a>
-      <figcaption><b>Figure 21d.</b> Nutmeg, low-pass.</figcaption>
+      <a href="media/dessert_fft_low.jpg" target="_blank" rel="noopener"><img src="media/dessert_fft_low.jpg" width="576" height="862" loading="lazy" alt="Fourier spectrum of the pastry's low-pass image, bright at the center and dark toward the edges"></a>
+      <figcaption><b>Figure 21d.</b> Pastry, low-pass.</figcaption>
     </figure>
     <figure>
-      <a href="media/derek_nutmeg_fft_hybrid.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_fft_hybrid.jpg" width="433" height="686" loading="lazy" alt="Fourier spectrum of the hybrid, with both a bright center and detail further out"></a>
+      <a href="media/dessert_fft_hybrid.jpg" target="_blank" rel="noopener"><img src="media/dessert_fft_hybrid.jpg" width="576" height="862" loading="lazy" alt="Fourier spectrum of the hybrid, similar to the two inputs"></a>
       <figcaption><b>Figure 21e.</b> The hybrid.</figcaption>
     </figure>
   </div>
@@ -690,13 +699,23 @@ def hybrid_image(im1, im2, sigma1, sigma2):
   <div class="grid2 viewers">
     <figure class="viewer">
       <div class="viewer-stage">
+        <img src="media/dessert_hybrid.jpg" width="576" height="862" alt="The dessert hybrid">
+      </div>
+      <div class="viewer-controls">
+        <label class="viewer-slider"><span>Close</span><input type="range" min="0" max="100" value="0" aria-label="Distance from the Dessert hybrid"><span>Far</span></label>
+        <output>Close up</output>
+      </div>
+      <figcaption><b>Figure 22a.</b> Dessert.</figcaption>
+    </figure>
+    <figure class="viewer">
+      <div class="viewer-stage">
         <img src="media/derek_nutmeg_hybrid.jpg" width="433" height="686" alt="The Derek and Nutmeg hybrid">
       </div>
       <div class="viewer-controls">
         <label class="viewer-slider"><span>Close</span><input type="range" min="0" max="100" value="0" aria-label="Distance from the Derek and Nutmeg hybrid"><span>Far</span></label>
         <output>Close up</output>
       </div>
-      <figcaption><b>Figure 22a.</b> Derek and Nutmeg.</figcaption>
+      <figcaption><b>Figure 22b.</b> Derek and Nutmeg.</figcaption>
     </figure>
     <figure class="viewer">
       <div class="viewer-stage">
@@ -706,21 +725,11 @@ def hybrid_image(im1, im2, sigma1, sigma2):
         <label class="viewer-slider"><span>Close</span><input type="range" min="0" max="100" value="0" aria-label="Distance from the Labubu hybrid"><span>Far</span></label>
         <output>Close up</output>
       </div>
-      <figcaption><b>Figure 22b.</b> Labubu.</figcaption>
+      <figcaption><b>Figure 22c.</b> Labubu.</figcaption>
     </figure>
     <figure class="viewer">
       <div class="viewer-stage">
-        <img src="media/dessert_hybrid.jpg" width="576" height="862" alt="The dessert hybrid">
-      </div>
-      <div class="viewer-controls">
-        <label class="viewer-slider"><span>Close</span><input type="range" min="0" max="100" value="0" aria-label="Distance from the Dessert hybrid"><span>Far</span></label>
-        <output>Close up</output>
-      </div>
-      <figcaption><b>Figure 22c.</b> Dessert.</figcaption>
-    </figure>
-    <figure class="viewer">
-      <div class="viewer-stage">
-        <img src="media/bird_hybrid.jpg" width="487" height="649" alt="The bird hybrid">
+        <img src="media/bird_hybrid.jpg" width="551" height="790" alt="The bird hybrid">
       </div>
       <div class="viewer-controls">
         <label class="viewer-slider"><span>Close</span><input type="range" min="0" max="100" value="0" aria-label="Distance from the Bird hybrid"><span>Far</span></label>
@@ -739,74 +748,80 @@ def hybrid_image(im1, im2, sigma1, sigma2):
     close, but the extra mid-frequency detail is still visible after shrinking, so the first image also shows from far
     away. A small &sigma;<sub>1</sub> keeps only the finest detail, which disappears when shrunk, but leaves less of the
     first image to see up close. A larger &sigma;<sub>2</sub> removes more of the second image's detail from the near
-    view, but leaves less of it to see from afar.
+    view, but leaves less of it to see from afar. The gain <i>k</i> moves the balance between the two without changing
+    which frequencies each image contributes: a larger <i>k</i> makes the first image stronger up close, and a smaller
+    one lets the second stand out.
   </p>
   <p class="setup">
     I first tuned these on the color images, and tuned them again after converting to grayscale, because without color
-    the far view has to work on brightness alone. It came out best with a low cutoff for the first image and a wider
-    blur for the second in every pair: &sigma;<sub>1</sub>&nbsp;=&nbsp;4 and &sigma;<sub>2</sub>&nbsp;=&nbsp;12 for
-    Derek and Nutmeg, 5 and 16 for the labubu, 7 and 16 for the dessert (a larger photo, 862 px tall against 686 for
-    Derek), and 5 and 12 for the gull. A Gaussian with standard deviation &sigma; pixels has a frequency response that
-    falls to 61% at 1/(2&pi;&sigma;) cycles per pixel, which I take as the cutoff.
+    the far view has to work on brightness alone. The settings are in the table. The dessert and Derek and Nutmeg use
+    <i>k</i>&nbsp;=&nbsp;1, and the dessert takes a larger &sigma;<sub>1</sub> because its photos are bigger (862 px
+    tall against 686 for Derek). For the labubu I raised <i>k</i> to 2, because the two dolls look alike and I wanted
+    the purple doll's fur and face lines to stand out up close, and I widened the low-pass a little to
+    &sigma;<sub>2</sub>&nbsp;=&nbsp;18 to keep some of the far view. For the gull I lowered <i>k</i> to 0.65 so that the
+    soft white shape of the wings-spread gull, which is the low-frequency image, is easier to see from far away. A
+    Gaussian with standard deviation &sigma; pixels has a frequency response that falls to 61% at 1/(2&pi;&sigma;)
+    cycles per pixel, which I take as the cutoff.
   </p>
 
   <table class="data-table">
-    <thead><tr><th>Hybrid</th><th>High frequencies from</th><th>Low frequencies from</th><th>High-pass</th><th>Low-pass</th></tr></thead>
+    <thead><tr><th>Hybrid</th><th>High frequencies from</th><th>Low frequencies from</th><th>High-pass</th><th>Low-pass</th><th>Gain <i>k</i></th></tr></thead>
     <tbody>
-      <tr><td>Derek and Nutmeg</td><td>Derek</td><td>Nutmeg</td><td class="num">&sigma; = 4 (0.040)</td><td class="num">&sigma; = 12 (0.013)</td></tr>
-      <tr><td>Labubu</td><td>Purple doll</td><td>Brown doll</td><td class="num">&sigma; = 5 (0.032)</td><td class="num">&sigma; = 16 (0.010)</td></tr>
-      <tr><td>Bird</td><td>Standing gull</td><td>Gull with wings spread</td><td class="num">&sigma; = 5 (0.032)</td><td class="num">&sigma; = 12 (0.013)</td></tr>
-      <tr><td>Dessert</td><td>Meringue tart</td><td>Red pastry</td><td class="num">&sigma; = 7 (0.023)</td><td class="num">&sigma; = 16 (0.010)</td></tr>
+      <tr><td>Dessert</td><td>Meringue tart</td><td>Red pastry</td><td class="num">&sigma; = 7 (0.023)</td><td class="num">&sigma; = 16 (0.010)</td><td class="num">1</td></tr>
+      <tr><td>Derek and Nutmeg</td><td>Derek</td><td>Nutmeg</td><td class="num">&sigma; = 4 (0.040)</td><td class="num">&sigma; = 12 (0.013)</td><td class="num">1</td></tr>
+      <tr><td>Labubu</td><td>Purple doll</td><td>Brown doll</td><td class="num">&sigma; = 5 (0.032)</td><td class="num">&sigma; = 18 (0.009)</td><td class="num">2</td></tr>
+      <tr><td>Bird</td><td>Standing gull</td><td>Gull with wings spread</td><td class="num">&sigma; = 5 (0.032)</td><td class="num">&sigma; = 12 (0.013)</td><td class="num">0.65</td></tr>
     </tbody>
   </table>
   <p class="sub" style="max-width:40rem">&sigma; is in pixels, and the cutoff in cycles per pixel is in brackets.</p>
 
   <h3>More hybrids</h3>
   <p class="setup">
-    These use my own photos. For each one the two inputs are shown in color, in the order high frequencies,
-    then low frequencies, followed by the hybrid, which is made from their grayscale versions. Together with Derek and Nutmeg they morph a person into a cat, one doll into another and one dessert into
-    another, and a gull that changes its pose.
+    These are the other three hybrids. For each one the two inputs are shown in color, in the order high frequencies,
+    then low frequencies, followed by the hybrid, which is made from their grayscale versions. Together with the dessert
+    they morph one dessert into another, a person into a cat and one doll into another, and change the pose of a gull.
   </p>
 
   <div class="grid3">
     <figure>
-      <a href="media/labubu_pair_1.jpg" target="_blank" rel="noopener"><img src="media/labubu_pair_1.jpg" width="750" height="1000" loading="lazy" alt="A purple plush Labubu doll held upside down in a hand, with large dark blue eyes"></a>
-      <figcaption><b>Figure 23a.</b> Purple doll, high frequencies.</figcaption>
+      <a href="media/DerekPicture.jpg" target="_blank" rel="noopener"><img src="media/DerekPicture.jpg" width="732" height="1024" loading="lazy" alt="Portrait of Derek, a man with short dark hair smiling, in a black shirt against a gray background"></a>
+      <figcaption><b>Figure 23a.</b> Derek, high frequencies.</figcaption>
     </figure>
     <figure>
-      <a href="media/labubu_pair_2.jpg" target="_blank" rel="noopener"><img src="media/labubu_pair_2.jpg" width="750" height="1000" loading="lazy" alt="A brown plush Labubu doll held upside down in a hand, with brown eyes"></a>
-      <figcaption><b>Figure 23b.</b> Brown doll, low frequencies.</figcaption>
+      <a href="media/nutmeg.jpg" target="_blank" rel="noopener"><img src="media/nutmeg.jpg" width="1408" height="1056" loading="lazy" alt="Nutmeg, a long-haired tabby cat with green eyes, looking at the camera from a wooden shelf"></a>
+      <figcaption><b>Figure 23b.</b> Nutmeg, low frequencies.</figcaption>
     </figure>
     <figure>
-      <a href="media/labubu_hybrid.jpg" target="_blank" rel="noopener"><img src="media/labubu_hybrid.jpg" width="513" height="715" loading="lazy" alt="The hybrid: a dark plush doll with the fine lines of a second doll's face over it"></a>
+      <a href="media/derek_nutmeg_hybrid.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_hybrid.jpg" width="433" height="686" loading="lazy" alt="The hybrid: Derek's face drawn in fine lines over a blurred cat"></a>
       <figcaption><b>Figure 23c.</b> The hybrid, aligned on the eyes.</figcaption>
     </figure>
   </div>
 
   <p class="setup">
-    The two dolls are held in almost the same pose, so aligning on their eyes lines up the faces. Up close you see the
-    purple doll's fur and face detail, and from far away it turns into the darker, brown one.
+    Derek supplies the high frequencies and Nutmeg the low ones, and I aligned them on their eyes. Up close you see
+    Derek's face drawn in fine lines, and from far away it turns into the cat.
   </p>
 
   <div class="grid3">
     <figure>
-      <a href="media/dessert_pair_2.jpg" target="_blank" rel="noopener"><img src="media/dessert_pair_2.jpg" width="750" height="1000" loading="lazy" alt="A lemon meringue tart with a raspberry and a knife on a patterned plate"></a>
-      <figcaption><b>Figure 24a.</b> Meringue tart, high frequencies.</figcaption>
+      <a href="media/labubu_pair_1.jpg" target="_blank" rel="noopener"><img src="media/labubu_pair_1.jpg" width="750" height="1000" loading="lazy" alt="A purple plush Labubu doll held upside down in a hand, with large dark blue eyes"></a>
+      <figcaption><b>Figure 24a.</b> Purple doll, high frequencies.</figcaption>
     </figure>
     <figure>
-      <a href="media/dessert_pair_1.jpg" target="_blank" rel="noopener"><img src="media/dessert_pair_1.jpg" width="750" height="1000" loading="lazy" alt="A red raspberry pastry with cream on the same patterned plate"></a>
-      <figcaption><b>Figure 24b.</b> Red pastry, low frequencies.</figcaption>
+      <a href="media/labubu_pair_2.jpg" target="_blank" rel="noopener"><img src="media/labubu_pair_2.jpg" width="750" height="1000" loading="lazy" alt="A brown plush Labubu doll held upside down in a hand, with brown eyes"></a>
+      <figcaption><b>Figure 24b.</b> Brown doll, low frequencies.</figcaption>
     </figure>
     <figure>
-      <a href="media/dessert_hybrid.jpg" target="_blank" rel="noopener"><img src="media/dessert_hybrid.jpg" width="576" height="862" loading="lazy" alt="The hybrid: the peaks of the meringue drawn over a dark round pastry"></a>
-      <figcaption><b>Figure 24c.</b> The hybrid, aligned on the pastries.</figcaption>
+      <a href="media/labubu_hybrid.jpg" target="_blank" rel="noopener"><img src="media/labubu_hybrid.jpg" width="513" height="715" loading="lazy" alt="The hybrid: a dark plush doll with the fine lines of a second doll's face over it"></a>
+      <figcaption><b>Figure 24c.</b> The hybrid, aligned on the eyes.</figcaption>
     </figure>
   </div>
 
   <p class="setup">
-    This one morphs one dessert into another. I swapped the roles compared with the other pairs, because it looks
-    better with the tart's sharp meringue peaks on top: they are drawn over the red pastry up close, and from far away
-    only the dark round shape of the pastry is left.
+    The two dolls are held in almost the same pose, so aligning on their eyes lines up the faces. Up close you see the
+    purple doll's fur and face detail, and from far away it turns into the darker, brown one. Because the dolls look so
+    much alike, I doubled the gain on the purple doll's high frequencies so that its fur and the outlines of its face
+    stand out.
   </p>
 
   <div class="grid3">
@@ -819,16 +834,18 @@ def hybrid_image(im1, im2, sigma1, sigma2):
       <figcaption><b>Figure 25b.</b> Gull with wings spread, low frequencies.</figcaption>
     </figure>
     <figure>
-      <a href="media/bird_hybrid.jpg" target="_blank" rel="noopener"><img src="media/bird_hybrid.jpg" width="487" height="649" loading="lazy" alt="The hybrid: a standing gull drawn in thin outlines on a tilted pier railing, with a soft white blur where the other gull is"></a>
-      <figcaption><b>Figure 25c.</b> The hybrid, aligned on the gull's head.</figcaption>
+      <a href="media/bird_hybrid.jpg" target="_blank" rel="noopener"><img src="media/bird_hybrid.jpg" width="551" height="790" loading="lazy" alt="The hybrid: a standing gull drawn in thin outlines on a railing, with a soft white shape to its left where the other gull is"></a>
+      <figcaption><b>Figure 25c.</b> The hybrid, aligned on the railing.</figcaption>
     </figure>
   </div>
 
   <p class="setup">
-    This one changes a gull's pose instead of swapping objects. I aligned the two photos on the gull's eye and beak,
-    which are the parts that look the same in both, and that turns the first photo about 18&deg; and shrinks the
-    second, so the tilted railing in the hybrid comes from the alignment. Up close you see the standing gull drawn
-    in fine detail, and from far away the blurred white shape of the wings-spread one takes its place.
+    This one changes a gull's pose instead of swapping objects. I aligned the two photos on the railing, using two
+    points on the far edge of its top board in each, which turns the first photo about 7&deg; and shrinks the second to
+    about 79%. The gulls are in different places along the railing, so they don't land on top of each other: the standing
+    gull is drawn in fine outlines on the right, and the wings-spread one is a soft white shape on the left. I lowered
+    the gain on the standing gull's high frequencies to 0.65 so that white shape is easier to see, and from far away it
+    is what is left.
   </p>
 
 </main>

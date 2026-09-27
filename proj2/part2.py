@@ -74,16 +74,16 @@ def log_spectrum(image):
 
 def run_part2p2(path_to_img_folder):
     # (name, image for the high frequencies, image for the low frequencies, alignment points, sigma of the high pass,
-    # sigma of the low pass). The cutoffs are tuned for each image by eye on the grayscale versions, at the sizes the page
-    # shows: the first image should win up close and the second from far away
+    # sigma of the low pass, gain on the high frequencies). The cutoffs and gain are tuned for each image by eye on the
+    # grayscale versions, at the sizes the page shows: the first image should win up close and the second from far away
     # The alignment points are (x, y) picked by hand instead of clicking: two on the first image, then the matching two on the second
     hybrids = [
-        ("derek_nutmeg", "DerekPicture.jpg", "nutmeg.jpg", ((296, 344), (444, 332), (600, 289), (749, 367)), 4, 12),
-        ("labubu", "labubu_pair_1.jpg", "labubu_pair_2.jpg", ((418, 664), (559, 675), (314, 691), (420, 692)), 5, 16),
-        ("bird", "bird_pair_1.jpg", "bird_pair_2.jpg", ((349, 438), (319, 459), (242, 433), (208, 478)), 5, 12),
-        ("dessert", "dessert_pair_2.jpg", "dessert_pair_1.jpg", ((350, 236), (350, 636), (357, 214), (436, 671)), 7, 16),
+        ("derek_nutmeg", "DerekPicture.jpg", "nutmeg.jpg", ((296, 344), (444, 332), (600, 289), (749, 367)), 4, 12, 1),
+        ("labubu", "labubu_pair_1.jpg", "labubu_pair_2.jpg", ((418, 664), (559, 675), (314, 691), (420, 692)), 5, 18, 2),
+        ("bird", "bird_pair_1.jpg", "bird_pair_2.jpg", ((80, 594), (500, 634), (80, 569), (600, 688)), 5, 12, 0.65),
+        ("dessert", "dessert_pair_2.jpg", "dessert_pair_1.jpg", ((350, 236), (350, 636), (357, 214), (436, 671)), 7, 16, 1),
     ]
-    for name, high_name, low_name, pts, sigma_high, sigma_low in hybrids:
+    for name, high_name, low_name, pts, sigma_high, sigma_low, gain in hybrids:
         # Convert both images to grayscale first, so the hybrid only depends on brightness
         im1 = to_gray(load_rgb(os.path.join(path_to_img_folder, high_name)))
         im2 = to_gray(load_rgb(os.path.join(path_to_img_folder, low_name)))
@@ -93,9 +93,9 @@ def run_part2p2(path_to_img_folder):
         aligned1, aligned2 = crop_to_valid(aligned1, aligned2, im1.shape, im2.shape, pts)
 
         # High frequencies of the first image (shown around mid gray), low frequencies of the second, and their sum
-        high = aligned1 - gaussian_blur(aligned1, sigma_high)
+        high = gain * (aligned1 - gaussian_blur(aligned1, sigma_high))
         low = gaussian_blur(aligned2, sigma_low)
-        hybrid = hybrid_image(aligned1, aligned2, sigma_high, sigma_low)
+        hybrid = hybrid_image(aligned1, aligned2, sigma_high, sigma_low, gain)
 
         images = {"aligned1": aligned1, "aligned2": aligned2, "high": high + 0.5, "low": low, "hybrid": hybrid}
         for part, image in images.items():
@@ -108,4 +108,4 @@ def run_part2p2(path_to_img_folder):
         highest = max(spectrum.max() for spectrum in spectra.values())
         for part, spectrum in spectra.items():
             save_img(f"{path_to_img_folder}/{name}_fft_{part}.jpg", clip_uint8((spectrum - lowest) / (highest - lowest) * 255))
-        print(f"{name}: {aligned1.shape[1]}x{aligned1.shape[0]}, sigma {sigma_high} (high pass) and {sigma_low} (low pass)")
+        print(f"{name}: {aligned1.shape[1]}x{aligned1.shape[0]}, sigma {sigma_high} (high pass) and {sigma_low} (low pass), gain {gain}")
