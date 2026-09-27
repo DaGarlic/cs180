@@ -237,12 +237,23 @@ p code, li code, td code, figcaption code {
 .grid2 figure { margin: 0; }
 .grid2 figcaption { text-align: left; }
 
+/* wider grid so thin edge lines stay near 1:1 */
+.doc > .grid2.wide { max-width: 54rem; }
+
 @media (max-width: 640px) {
   .grid2 { grid-template-columns: 1fr; }
 }
 
-/* zoomed corner crops sit as a tight pair */
-.pair.crops img { image-rendering: pixelated; }
+/* --- equations (MathML) --------------------------------------------- */
+
+math.eq {
+  font-size: 1.3rem;
+  margin: 1.2rem auto;
+  color: var(--ink);
+}
+
+/* filter images stay crisp when enlarged */
+.pair.filters img { image-rendering: pixelated; }
 
 /* --- print ---------------------------------------------------- */
 

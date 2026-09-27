@@ -1,4 +1,5 @@
 from math import pi, exp
+import cv2
 import numpy as np
 import scipy.signal
 
@@ -80,3 +81,13 @@ def convol_img_2loops(image, kernel, mode="same"):
 
 def convol_with_scipy(image, kernel, mode="same"):
     return scipy.signal.convolve2d(image, kernel, mode=mode, boundary="fill", fillvalue=0)
+
+def gaussian_kernel_cv(size, sigma):
+    # Generate a 2D Gaussian kernel as the outer product of cv2's 1D Gaussian with itself
+    kernel_1d = cv2.getGaussianKernel(size, sigma)
+    return kernel_1d @ kernel_1d.T
+
+def convol_symm_with_scipy(image, kernel):
+    # Same as convol_with_scipy, but mirrors the image at the border instead of zero padding it,
+    # so blurring doesn't darken the edges and no fake frame shows up in the gradients
+    return scipy.signal.convolve2d(image, kernel, mode="same", boundary="symm")

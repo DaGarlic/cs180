@@ -18,7 +18,7 @@
   <p class="sub">Project 2 &middot; Ariq Koh &middot; CS180, Fall 2026 &middot; convolution, edges and frequencies</p>
 
   <p class="setup">
-    This page covers Part 1.1 so far, and I'll add the other parts as I finish them.
+    This page covers Parts 1.1 to 1.3 so far, and I'll add the other parts as I finish them.
   </p>
 
 
@@ -143,7 +143,7 @@ def box_kernel(size):
   <p class="setup">
     The reference call zero-fills the border the same way my padding does. I run all
     three implementations on the same image and kernel, in both padding modes, and
-    assert that they agree.
+    take the largest difference between their outputs.
   </p>
 
 <pre class="code"><code>def convol_with_scipy(image, kernel, mode="same"):
@@ -153,8 +153,7 @@ def box_kernel(size):
 cimg, t_four = timed(convol_img, img, kernel, mode)
 c2img, t_two = timed(convol_img_2loops, img, kernel, mode)
 scimg, t_scipy = timed(convol_with_scipy, img, kernel, mode)
-assert np.allclose(cimg, scimg), f"four loop {name} ({mode}) does not match scipy"
-assert np.allclose(c2img, scimg), f"two loop {name} ({mode}) does not match scipy"</code></pre>
+max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></pre>
 
   <h3>Results</h3>
   <p class="setup">
@@ -206,18 +205,209 @@ assert np.allclose(c2img, scimg), f"two loop {name} ({mode}) does not match scip
 
   <h3>Boundary handling</h3>
   <p class="setup">
-    Both use zero fill, so they agree. The largest difference from <code>scipy</code>'s <code>boundary="fill", fillvalue=0</code> is 6.3e-13 for the box filter (floating-point rounding) and exactly 0 for Dx and Dy. The mode only changes the output size: "same" returns H&times;W, while "full" returns every position where the kernel overlaps the image at all, which for the 9&times;9 filter is 8 pixels taller and wider (1288&times;968). Zero padding has two visible costs. For the box filter, output pixels within 4 pixels of the edge average in zeros and come out darker. In Figure 5 the top row falls from 152 to 85 and is back to the input's value by the fifth row. For Dx and Dy it creates a fake edge: the first column of Dx is the pixel value minus zero, so it equals the image's own left column. In the full-size Dx image that column has a mean of 155, against 5 for the column next to it, a one-pixel bright line that is too thin to see at the size shown in Figure 3. The same happens along the top row of Dy (Figure 4). <code>scipy</code> can pad by reflecting (<code>boundary="symm"</code>) or wrapping instead, which avoids both problems. I only implemented zero fill, as the assignment asks.
+    Both implementations pad with zeros, which is the fill <code>convolve2d</code> uses by
+    default, so the outputs match <code>scipy</code> up to floating-point rounding (a largest
+    difference of 6.3e-13 for the box filter and 0 for Dx and Dy). Zero padding only affects
+    the outermost pixels: the box filter darkens the outer 4 pixels because it averages in
+    zeros, and Dx and Dy pick up a one-pixel edge along the left and top border respectively.
+    <code>scipy</code> can also reflect or wrap at the border, but I only implemented zero fill.
   </p>
 
-  <div class="pair crops">
+  <h2 id="s2"><span class="secno">1.2</span> Finite difference operator</h2>
+  <p class="setup">
+    I convolved the cameraman image with the finite difference operators from Part 1.1,
+    using my own four-loop convolution with "same" padding. Dx gives the partial derivative
+    Ix in x and Dy gives the partial derivative Iy in y. The gradient magnitude,
+    <code>sqrt(Ix&sup2; + Iy&sup2;)</code>, combines the two into a single edge-strength
+    image that doesn't depend on which way the edge points.
+  </p>
+  <p class="setup">
+    Two things needed handling first. The cameraman file has a white frame around it (7 px
+    at the top, 5 at the right, 1 at the bottom and left), which would show up as a strong
+    fake edge all the way round, so I crop it off, leaving 534&times;534. And zero padding
+    makes the first column of Dx and the first row of Dy raw pixel values instead of
+    differences, so I set those to zero.
+  </p>
+
+  <div class="grid2 wide">
     <figure>
-      <img src="media/corner_gray.png" width="400" height="400" loading="lazy" alt="Top-left 100 by 100 pixel corner of the grayscale photo, enlarged 4 times">
+      <img src="media/cameraman_gray.jpg" width="534" height="534" loading="lazy" alt="Grayscale photo of a man in a dark coat bending over a camera on a tripod, with buildings on the horizon and grass in the foreground">
+      <figcaption><b>Figure 5.</b> The input, cropped and read as grayscale.</figcaption>
     </figure>
     <figure>
-      <img src="media/corner_box.png" width="400" height="400" loading="lazy" alt="The same corner after the 9 by 9 box filter, fading to black at the top and left edges">
+      <img src="media/cameraman_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude of the cameraman image: bright outlines of the man, the camera, the tripod and the horizon on a dark background, with faint speckle in the grass">
+      <figcaption><b>Figure 6.</b> Gradient magnitude. The outline, camera, tripod and horizon show up together, along with faint speckle from the grass. Scaled so the largest value is 255.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/cameraman_dx.jpg" width="534" height="534" loading="lazy" alt="Absolute Dx response of the cameraman image: bright on vertical edges such as the tripod legs, the buildings on the horizon and the side of the coat">
+      <figcaption><b>Figure 7.</b> Ix, from Dx. Vertical edges light up: the tripod legs, the buildings on the horizon and the outline of the coat. Absolute value, scaled so the largest response is 255.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/cameraman_dy.jpg" width="534" height="534" loading="lazy" alt="Absolute Dy response of the cameraman image: bright on horizontal edges such as the top of the camera, the shoulder and the horizon line">
+      <figcaption><b>Figure 8.</b> Iy, from Dy. Horizontal edges light up: the camera, the shoulder and the line of the horizon. Absolute value, scaled so the largest response is 255.</figcaption>
     </figure>
   </div>
-  <p class="sub" style="max-width:40rem"><b>Figure 5.</b> The top-left 100&times;100 pixels, enlarged 4&times;. Left: the input. Right: after the box filter, darkening over the outer 4 pixels where the kernel reaches into the zero padding.</p>
+
+  <h3>Choosing a threshold</h3>
+  <p class="setup">
+    To get a binary edge image I keep the pixels of the gradient magnitude above a threshold.
+    Figure 9 shows four choices.
+  </p>
+
+  <div class="grid2 wide">
+    <figure>
+      <img src="media/cameraman_edges_15.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 15: the outline is surrounded by dense speckle over the grass and the sky">
+      <figcaption><b>Figure 9a.</b> Threshold 15 (12.6% of pixels). Too low: the grass and specks in the sky pass.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/cameraman_edges_30.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 30: clean outline and tripod, with speckle still covering the grass">
+      <figcaption><b>Figure 9b.</b> Threshold 30 (6.4%). The outline and tripod are clean, but the grass still speckles the bottom.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/cameraman_edges_45.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 45: clean outline, camera, tripod and most of the horizon, with little speckle">
+      <figcaption><b>Figure 9c.</b> Threshold 45 (3.8%), the one I chose.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/cameraman_edges_80.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 80: only the strongest edges remain and the camera detail and horizon are broken up">
+      <figcaption><b>Figure 9d.</b> Threshold 80 (1.7%). Too high: the camera detail and the horizon break up or vanish.</figcaption>
+    </figure>
+  </div>
+
+  <p class="setup">
+    The threshold trades noise against real edges. At 15 the fine texture of the grass and a
+    few specks in the sky are strong enough to pass, so noise crowds the real edges. At 80 the noise
+    is gone, but so is a lot of true structure: the details of the camera and the skyline at
+    the horizon are broken up or missing. I chose 45. It removes most of the grass texture
+    while keeping the cameraman's outline, the camera, the tripod legs and most of the
+    horizon.
+  </p>
+
+  <h2 id="s3"><span class="secno">1.3</span> Derivative of Gaussian (DoG) filter</h2>
+  <p class="setup">
+    Finite differences amplify noise, which is why the edge maps in Part 1.2 pick up the
+    texture of the grass. Blurring first suppresses it. I built a 13&times;13 Gaussian with
+    &sigma;&nbsp;=&nbsp;2 as the outer product of the 1D kernel from
+    <code>cv2.getGaussianKernel</code> with itself,
+  </p>
+
+  <math display="block" class="eq" aria-label="G equals g times g transpose">
+    <mrow>
+      <mi>G</mi><mo>=</mo><mi>g</mi><msup><mi>g</mi><mi>T</mi></msup>
+    </mrow>
+  </math>
+
+  <p class="setup">
+    blurred the image with it, and repeated the Part 1.2 procedure on the blurred result.
+  </p>
+
+  <div class="grid2 wide">
+    <figure>
+      <img src="media/cameraman_gray.jpg" width="534" height="534" loading="lazy" alt="The cropped grayscale cameraman image before blurring">
+      <figcaption><b>Figure 10a.</b> Without blur (the input from Figure 5).</figcaption>
+    </figure>
+    <figure>
+      <img src="media/cameraman_blurred.jpg" width="534" height="534" loading="lazy" alt="The cameraman image after blurring with a 13 by 13 Gaussian, sigma 2">
+      <figcaption><b>Figure 10b.</b> Blurred with the 13&times;13 Gaussian, &sigma;&nbsp;=&nbsp;2.</figcaption>
+    </figure>
+  </div>
+
+  <h3>DoG filters</h3>
+  <p class="setup">
+    Convolution is associative, so blurring the image and then taking a finite difference is
+    the same as convolving the image once with the Gaussian already convolved with the
+    difference operator. I convolved the Gaussian with Dx and with Dy, using my own
+    convolution from Part 1.1 with "full" padding, to get the two derivative of Gaussian
+    (DoG) filters:
+  </p>
+
+  <math display="block" class="eq" aria-label="DoG x equals G convolved with D x, and DoG y equals G convolved with D y">
+    <mrow>
+      <msub><mi>DoG</mi><mi>x</mi></msub><mo>=</mo><mi>G</mi><mo>&lowast;</mo><msub><mi>D</mi><mi>x</mi></msub>
+      <mspace width="2.4em"></mspace>
+      <msub><mi>DoG</mi><mi>y</mi></msub><mo>=</mo><mi>G</mi><mo>&lowast;</mo><msub><mi>D</mi><mi>y</mi></msub>
+    </mrow>
+  </math>
+
+  <math display="block" class="eq" aria-label="I convolved with DoG x equals the quantity I convolved with G, convolved with D x">
+    <mrow>
+      <mi>I</mi><mo>&lowast;</mo><msub><mi>DoG</mi><mi>x</mi></msub>
+      <mo>=</mo>
+      <mo>(</mo><mi>I</mi><mo>&lowast;</mo><mi>G</mi><mo>)</mo><mo>&lowast;</mo><msub><mi>D</mi><mi>x</mi></msub>
+    </mrow>
+  </math>
+
+  <p class="setup">
+    They come out 13&times;14 and 14&times;13, one row or column larger than the Gaussian
+    because Dx and Dy have two entries.
+  </p>
+
+  <figure class="narrow">
+    <div class="pair filters">
+      <img src="media/cameraman_dog_x.png" width="280" height="260" loading="lazy" alt="The DoG x filter: a light lobe on the left and a dark lobe on the right on a mid gray background">
+      <img src="media/cameraman_dog_y.png" width="260" height="280" loading="lazy" alt="The DoG y filter: a light lobe on top and a dark lobe below on a mid gray background">
+    </div>
+    <figcaption>
+      <b>Figure 11.</b> The DoG filters, DoG<sub>x</sub> (left, 13&times;14) and DoG<sub>y</sub> (right,
+      14&times;13), enlarged 20&times;. Mid gray is zero, lighter is positive and darker is negative.
+    </figcaption>
+  </figure>
+
+  <h3>Blurred against unblurred</h3>
+  <p class="setup">
+    Figure 12 compares the gradient magnitude and the binarized edges without blur (Part 1.2)
+    and with it. The blurred gradients are much weaker, with a maximum of 39.6 against 221, so
+    I used a lower threshold of 15 for them, chosen the same way as before, instead of 45.
+    The blur and the derivatives here mirror the image at the border instead of zero padding it,
+    so the blur doesn't darken the edges and no fake frame appears.
+  </p>
+
+  <div class="grid2 wide">
+    <figure>
+      <img src="media/cameraman_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude without blur: thin bright edges with faint speckle over the grass">
+      <figcaption><b>Figure 12a.</b> Gradient magnitude, no blur (Part 1.2).</figcaption>
+    </figure>
+    <figure>
+      <img src="media/cameraman_blur_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude after blurring: smooth, wider bright edges with almost no speckle over the grass">
+      <figcaption><b>Figure 12b.</b> Gradient magnitude, blurred first.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/cameraman_edges_45.png" width="534" height="534" loading="lazy" alt="Binary edge map without blur at threshold 45: thin lines with some speckle in the grass">
+      <figcaption><b>Figure 12c.</b> Binarized edges, no blur, threshold 45.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/cameraman_blur_edges.png" width="534" height="534" loading="lazy" alt="Binary edge map after blurring at threshold 15: thick clean outlines of the man, camera and tripod with no speckle in the grass">
+      <figcaption><b>Figure 12d.</b> Binarized edges, blurred first, threshold 15.</figcaption>
+    </figure>
+  </div>
+
+  <h3>DoG results</h3>
+  <p class="setup">
+    Applying the DoG filters directly to the original image, in one convolution each, gives
+    the same result as blurring first. The largest difference from the two-step
+    version is 2.5e-13 for Ix, 2.1e-13 for Iy and 2.7e-13 for the magnitude, which is floating-point
+    rounding, and none of the 285,156 pixels differ in the binarized edges.
+  </p>
+
+  <div class="grid2 wide">
+    <figure>
+      <img src="media/cameraman_dog_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude from the DoG filters, identical to the blurred two-step result">
+      <figcaption><b>Figure 13a.</b> Gradient magnitude from the DoG filters, matching Figure 12b.</figcaption>
+    </figure>
+    <figure>
+      <img src="media/cameraman_dog_edges.png" width="534" height="534" loading="lazy" alt="Binary edges from the DoG filters at threshold 15, identical to the blurred two-step result">
+      <figcaption><b>Figure 13b.</b> Binarized edges from the DoG filters, threshold 15, matching Figure 12d.</figcaption>
+    </figure>
+  </div>
+
+  <h3>What differences do you see?</h3>
+  <p class="setup">
+    Blurring removes the noise. Without it, the grass texture and the specks in the sky pass
+    a low threshold, and it takes a high one (45) to get rid of them, which also thins out real
+    edges. With the blur the grass produces almost no false edges, so a much lower threshold
+    keeps the outline, the camera, the tripod and much of the horizon. The cost is sharpness.
+    The edges come out several pixels wide instead of one or two, and small details such as
+    the parts of the camera are smoothed into fewer, rounder shapes.
+  </p>
 
 </main>
 </body>
