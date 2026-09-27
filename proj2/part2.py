@@ -80,7 +80,7 @@ def run_part2p2(path_to_img_folder):
     hybrids = [
         ("derek_nutmeg", "DerekPicture.jpg", "nutmeg.jpg", ((296, 344), (444, 332), (600, 289), (749, 367)), 4, 12),
         ("labubu", "labubu_pair_1.jpg", "labubu_pair_2.jpg", ((418, 664), (559, 675), (314, 691), (420, 692)), 5, 16),
-        ("bird", "bird_pair_1.jpg", "bird_pair_2.jpg", ((278, 633), (217, 694), (231, 619), (198, 652)), 3, 8),
+        ("bird", "bird_pair_1.jpg", "bird_pair_2.jpg", ((349, 438), (319, 459), (242, 433), (208, 478)), 5, 12),
         ("dessert", "dessert_pair_2.jpg", "dessert_pair_1.jpg", ((350, 236), (350, 636), (357, 214), (436, 671)), 7, 16),
     ]
     for name, high_name, low_name, pts, sigma_high, sigma_low in hybrids:

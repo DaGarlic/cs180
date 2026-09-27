@@ -683,26 +683,52 @@ def hybrid_image(im1, im2, sigma1, sigma2):
 
   <h3>Viewing it</h3>
   <p class="setup">
-    Drag the slider in Figure 22 to move away from a hybrid. Close up you should see the high-frequency image,
-    and as it gets smaller the low-frequency one takes over. The buttons switch between all four hybrids.
+    Each hybrid in Figure 22 has its own slider that moves it away from you. Close up you should see the
+    high-frequency image, and as it gets smaller the low-frequency one takes over.
   </p>
 
-  <figure class="narrow viewer" id="viewer">
-    <div class="viewer-stage">
-      <img src="media/derek_nutmeg_hybrid.jpg" width="433" height="686" alt="The Derek and Nutmeg hybrid">
-    </div>
-    <div class="viewer-controls">
-      <div class="viewer-tabs" role="group" aria-label="Choose a hybrid">
-        <button type="button" class="on" aria-pressed="true" data-src="media/derek_nutmeg_hybrid.jpg" data-w="433" data-h="686" data-alt="The Derek and Nutmeg hybrid">Derek and Nutmeg</button>
-        <button type="button" aria-pressed="false" data-src="media/labubu_hybrid.jpg" data-w="513" data-h="715" data-alt="The labubu hybrid">Labubu</button>
-        <button type="button" aria-pressed="false" data-src="media/dessert_hybrid.jpg" data-w="576" data-h="862" data-alt="The dessert hybrid">Dessert</button>
-        <button type="button" aria-pressed="false" data-src="media/bird_hybrid.jpg" data-w="405" data-h="540" data-alt="The bird hybrid">Bird</button>
+  <div class="grid2 viewers">
+    <figure class="viewer">
+      <div class="viewer-stage">
+        <img src="media/derek_nutmeg_hybrid.jpg" width="433" height="686" alt="The Derek and Nutmeg hybrid">
       </div>
-      <label class="viewer-slider"><span>Close</span><input type="range" min="0" max="100" value="0" aria-label="Distance from the hybrid"><span>Far</span></label>
-      <output>Close up</output>
-    </div>
-    <figcaption><b>Figure 22.</b> The four hybrids, seen from a distance you choose.</figcaption>
-  </figure>
+      <div class="viewer-controls">
+        <label class="viewer-slider"><span>Close</span><input type="range" min="0" max="100" value="0" aria-label="Distance from the Derek and Nutmeg hybrid"><span>Far</span></label>
+        <output>Close up</output>
+      </div>
+      <figcaption><b>Figure 22a.</b> Derek and Nutmeg.</figcaption>
+    </figure>
+    <figure class="viewer">
+      <div class="viewer-stage">
+        <img src="media/labubu_hybrid.jpg" width="513" height="715" alt="The labubu hybrid">
+      </div>
+      <div class="viewer-controls">
+        <label class="viewer-slider"><span>Close</span><input type="range" min="0" max="100" value="0" aria-label="Distance from the Labubu hybrid"><span>Far</span></label>
+        <output>Close up</output>
+      </div>
+      <figcaption><b>Figure 22b.</b> Labubu.</figcaption>
+    </figure>
+    <figure class="viewer">
+      <div class="viewer-stage">
+        <img src="media/dessert_hybrid.jpg" width="576" height="862" alt="The dessert hybrid">
+      </div>
+      <div class="viewer-controls">
+        <label class="viewer-slider"><span>Close</span><input type="range" min="0" max="100" value="0" aria-label="Distance from the Dessert hybrid"><span>Far</span></label>
+        <output>Close up</output>
+      </div>
+      <figcaption><b>Figure 22c.</b> Dessert.</figcaption>
+    </figure>
+    <figure class="viewer">
+      <div class="viewer-stage">
+        <img src="media/bird_hybrid.jpg" width="487" height="649" alt="The bird hybrid">
+      </div>
+      <div class="viewer-controls">
+        <label class="viewer-slider"><span>Close</span><input type="range" min="0" max="100" value="0" aria-label="Distance from the Bird hybrid"><span>Far</span></label>
+        <output>Close up</output>
+      </div>
+      <figcaption><b>Figure 22d.</b> Bird.</figcaption>
+    </figure>
+  </div>
 
   <h3>Cutoff frequencies</h3>
   <p class="setup">
@@ -720,8 +746,7 @@ def hybrid_image(im1, im2, sigma1, sigma2):
     the far view has to work on brightness alone. It came out best with a low cutoff for the first image and a wider
     blur for the second in every pair: &sigma;<sub>1</sub>&nbsp;=&nbsp;4 and &sigma;<sub>2</sub>&nbsp;=&nbsp;12 for
     Derek and Nutmeg, 5 and 16 for the labubu, 7 and 16 for the dessert (a larger photo, 862 px tall against 686 for
-    Derek), and 3 and 8 for the bird. The two beach photos are so much alike that the far view stays weak whatever I
-    choose, so the bird is a compromise. A Gaussian with standard deviation &sigma; pixels has a frequency response that
+    Derek), and 5 and 12 for the gull. A Gaussian with standard deviation &sigma; pixels has a frequency response that
     falls to 61% at 1/(2&pi;&sigma;) cycles per pixel, which I take as the cutoff.
   </p>
 
@@ -730,7 +755,7 @@ def hybrid_image(im1, im2, sigma1, sigma2):
     <tbody>
       <tr><td>Derek and Nutmeg</td><td>Derek</td><td>Nutmeg</td><td class="num">&sigma; = 4 (0.040)</td><td class="num">&sigma; = 12 (0.013)</td></tr>
       <tr><td>Labubu</td><td>Purple doll</td><td>Brown doll</td><td class="num">&sigma; = 5 (0.032)</td><td class="num">&sigma; = 16 (0.010)</td></tr>
-      <tr><td>Bird</td><td>First beach photo</td><td>Second beach photo</td><td class="num">&sigma; = 3 (0.053)</td><td class="num">&sigma; = 8 (0.020)</td></tr>
+      <tr><td>Bird</td><td>Standing gull</td><td>Gull with wings spread</td><td class="num">&sigma; = 5 (0.032)</td><td class="num">&sigma; = 12 (0.013)</td></tr>
       <tr><td>Dessert</td><td>Meringue tart</td><td>Red pastry</td><td class="num">&sigma; = 7 (0.023)</td><td class="num">&sigma; = 16 (0.010)</td></tr>
     </tbody>
   </table>
@@ -740,7 +765,7 @@ def hybrid_image(im1, im2, sigma1, sigma2):
   <p class="setup">
     These use my own photos. For each one the two inputs are shown in color, in the order high frequencies,
     then low frequencies, followed by the hybrid, which is made from their grayscale versions. Together with Derek and Nutmeg they morph a person into a cat, one doll into another and one dessert into
-    another, and one of them changes the viewpoint instead of the subject.
+    another, and a gull that changes its pose.
   </p>
 
   <div class="grid3">
@@ -786,24 +811,24 @@ def hybrid_image(im1, im2, sigma1, sigma2):
 
   <div class="grid3">
     <figure>
-      <a href="media/bird_pair_1.jpg" target="_blank" rel="noopener"><img src="media/bird_pair_1.jpg" width="750" height="1000" loading="lazy" alt="A seagull standing on a sandy beach next to a lake, with sand ripples in the foreground"></a>
-      <figcaption><b>Figure 25a.</b> First photo, high frequencies.</figcaption>
+      <a href="media/bird_pair_1.jpg" target="_blank" rel="noopener"><img src="media/bird_pair_1.jpg" width="750" height="1000" loading="lazy" alt="A seagull standing on a wooden pier railing, with the sea and a low hill behind it"></a>
+      <figcaption><b>Figure 25a.</b> Standing gull, high frequencies.</figcaption>
     </figure>
     <figure>
-      <a href="media/bird_pair_2.jpg" target="_blank" rel="noopener"><img src="media/bird_pair_2.jpg" width="750" height="1000" loading="lazy" alt="The same beach photographed from farther back, with the seagull much smaller"></a>
-      <figcaption><b>Figure 25b.</b> Second photo, low frequencies.</figcaption>
+      <a href="media/bird_pair_2.jpg" target="_blank" rel="noopener"><img src="media/bird_pair_2.jpg" width="750" height="1000" loading="lazy" alt="A seagull on the same kind of pier railing with its wings spread as it steps forward, with an island behind it"></a>
+      <figcaption><b>Figure 25b.</b> Gull with wings spread, low frequencies.</figcaption>
     </figure>
     <figure>
-      <a href="media/bird_hybrid.jpg" target="_blank" rel="noopener"><img src="media/bird_hybrid.jpg" width="405" height="540" loading="lazy" alt="The hybrid: a beach scene with one seagull, sand ripples and a dark hill"></a>
-      <figcaption><b>Figure 25c.</b> The hybrid, aligned on the seagull.</figcaption>
+      <a href="media/bird_hybrid.jpg" target="_blank" rel="noopener"><img src="media/bird_hybrid.jpg" width="487" height="649" loading="lazy" alt="The hybrid: a standing gull drawn in thin outlines on a tilted pier railing, with a soft white blur where the other gull is"></a>
+      <figcaption><b>Figure 25c.</b> The hybrid, aligned on the gull's head.</figcaption>
     </figure>
   </div>
 
   <p class="setup">
-    Here the same beach and gull are seen from two distances, which is a change over time or position instead of a
-    change of object. I aligned the two on the gull's head and tail, so its size matches. This is the subtlest of the
-    four, because the scenes are so alike: the sand and gull detail comes from the first photo and the hill and sky
-    layout from the second, and there is no dramatic switch.
+    This one changes a gull's pose instead of swapping objects. I aligned the two photos on the gull's eye and beak,
+    which are the parts that look the same in both, and that turns the first photo about 18&deg; and shrinks the
+    second, so the tilted railing in the hybrid comes from the alignment. Up close you see the standing gull drawn
+    in fine detail, and from far away the blurred white shape of the wings-spread one takes its place.
   </p>
 
 </main>
@@ -826,11 +851,10 @@ def hybrid_image(im1, im2, sigma1, sigma2):
   window.addEventListener('resize', spy);
   spy();
 
-  // distance slider: a hybrid is shown smaller and smaller as you move away from it
-  var v = document.getElementById('viewer');
-  if (v) {
+  // distance sliders: each hybrid is shown smaller and smaller as you move away from it
+  document.querySelectorAll('.viewer').forEach(function (v) {
     var img = v.querySelector('.viewer-stage img'), range = v.querySelector('input[type=range]');
-    var out = v.querySelector('output'), tabs = v.querySelectorAll('.viewer-tabs button');
+    var out = v.querySelector('output');
     var maxH = 270, minH = 40;
     function draw() {
       var t = range.value / 100, h = maxH * Math.pow(minH / maxH, t);
@@ -838,15 +862,9 @@ def hybrid_image(im1, im2, sigma1, sigma2):
       out.textContent = t === 0 ? 'Close up' : (maxH / h).toFixed(1) + '\u00d7 farther away';
     }
     range.addEventListener('input', draw);
-    tabs.forEach(function (b) {
-      b.addEventListener('click', function () {
-        tabs.forEach(function (o) { o.classList.toggle('on', o === b); o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
-        img.src = b.dataset.src; img.width = +b.dataset.w; img.height = +b.dataset.h; img.alt = b.dataset.alt;
-      });
-    });
     v.classList.add('ready');
     draw();
-  }
+  });
 })();
 </script>
 </body>

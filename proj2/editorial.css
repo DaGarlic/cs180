@@ -366,9 +366,9 @@ figure a, .pair > a { display: block; cursor: zoom-in; }
 
 /* --- distance slider for the hybrid images ------------------------------------ */
 
-.doc > figure.viewer { max-width: 26rem; }
 .viewer-stage {
   height: 270px;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -387,26 +387,15 @@ figure a, .pair > a { display: block; cursor: zoom-in; }
 .viewer-controls { display: none; }
 .viewer.ready .viewer-controls {
   display: block;
-  margin-top: .9rem;
+  margin-top: .7rem;
   font-family: var(--sans);
   font-size: .8rem;
   color: var(--ink-soft);
 }
-.viewer-tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin-bottom: .9rem; }
-.viewer-tabs button {
-  font: inherit;
-  padding: .3rem .75rem;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ink-soft);
-  cursor: pointer;
-}
-.viewer-tabs button:hover { color: var(--accent); border-color: var(--accent); }
-.viewer-tabs button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-.viewer-slider { display: flex; align-items: center; gap: .8rem; }
+.viewer-slider { display: flex; align-items: center; gap: .5rem; }
 .viewer-slider input { flex: 1; accent-color: var(--accent); }
-.viewer output { display: block; margin-top: .4rem; text-align: center; }
+.viewer output { display: block; margin-top: .3rem; text-align: center; }
+.viewers figcaption { text-align: center; }
 
 /* --- equations (MathML) --------------------------------------------- */
 
