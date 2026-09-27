@@ -1028,6 +1028,15 @@ def composite_masked(base, overlay, overlay_mask, top, left):
     <figcaption><b>Figure 36.</b> Spongebob and the fire scene weighted by the mask at three levels, and the total over all levels.</figcaption>
   </figure>
 
+  <h2>Takeaways</h2>
+  <p class="setup">
+    A single operation, convolution with a kernel, runs through every part of this project. The same primitive that
+    pulls out edges in Part 1 also removes and restores frequencies for sharpening in Part 2.1, separates high and low
+    frequencies for hybrid images in Part 2.2, and, applied repeatedly at doubling widths, builds the stack of
+    frequency bands that Parts 2.3 and 2.4 blend. Convolution turns out to be a general-purpose tool: swapping only
+    the kernel and how its outputs get combined is enough to move between very different-looking results, from edge
+    detection to multiresolution blending, without changing the underlying operation at all.
+  </p>
 
 </main>
 
