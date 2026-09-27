@@ -277,3 +277,31 @@ def match_at_seam(image, reference, white=0.94):
     warped = cv2.warpAffine(image.astype(np.float32), matrix, (image.shape[1], image.shape[0]), flags=cv2.INTER_CUBIC,
                             borderMode=cv2.BORDER_CONSTANT, borderValue=(1, 1, 1))
     return np.clip(warped, 0, 1).astype(float), scale, shift
+
+def segment_grabcut(image, rect, iterations=10):
+    # Cut a rough foreground object out of a BGR uint8 image with GrabCut, seeded with a rectangle around it. Cleaned
+    # up with morphological open/close and filled to its external contour, so interior dark details (buttons, a belt)
+    # don't punch holes in the mask. Returns a float64 mask of 1s and 0s, the same size as the image
+    gc_mask = np.zeros(image.shape[:2], np.uint8)
+    bgd_model, fgd_model = np.zeros((1, 65), np.float64), np.zeros((1, 65), np.float64)
+    cv2.grabCut(image, gc_mask, rect, bgd_model, fgd_model, iterations, cv2.GC_INIT_WITH_RECT)
+    binary = np.where((gc_mask == cv2.GC_FGD) | (gc_mask == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, np.ones((11, 11), np.uint8))
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    largest = max(contours, key=cv2.contourArea)
+    solid = np.zeros_like(binary)
+    cv2.drawContours(solid, [largest], -1, 255, thickness=cv2.FILLED)
+    return (solid > 0).astype(np.float64)
+
+def composite_masked(base, overlay, overlay_mask, top, left):
+    # Paste overlay (and its own mask) onto a copy of base at (top, left). Returns the composited image and a mask
+    # the same size as base, for blending against the unmodified base with an irregular (non-seam) mask
+    canvas = base.copy()
+    mask_full = np.zeros(base.shape[:2])
+    h, w = overlay.shape[:2]
+    region = canvas[top:top + h, left:left + w]
+    weight = overlay_mask[..., np.newaxis]
+    region[:] = overlay * weight + region * (1 - weight)
+    mask_full[top:top + h, left:left + w] = overlay_mask
+    return canvas, mask_full

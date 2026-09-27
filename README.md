@@ -9,5 +9,5 @@ Live site: **<https://dagarlic.github.io/cs180/>**
 - [Project 1 — Images of the Russian Empire](proj1/) — colorizing the
   Prokudin-Gorskii glass plate negatives.
 - [Project 2 — Fun with Filters and Frequencies](proj2/) — convolution from
-  scratch, edges, derivative of Gaussian, image sharpening, hybrid images and stacks (in progress: Parts 1.1 to 1.3 and 2.1 to 2.3 so far).
+  scratch, edges, derivative of Gaussian, image sharpening, hybrid images, stacks and multiresolution blending (Parts 1.1 to 1.3 and 2.1 to 2.4).
 

@@ -21,6 +21,7 @@
     <a href="#s4"><span class="no">2.1</span> Sharpening</a>
     <a href="#s5"><span class="no">2.2</span> Hybrid</a>
     <a href="#s6"><span class="no">2.3</span> Stacks</a>
+    <a href="#s7"><span class="no">2.4</span> Blending</a>
   </div>
 </nav>
 <main class="doc">
@@ -29,7 +30,7 @@
   <p class="sub">Project 2 &middot; Ariq Koh &middot; CS180, Fall 2026 &middot; convolution, edges and frequencies</p>
 
   <p class="setup">
-    This page covers Parts 1.1 to 1.3 and 2.1 to 2.3 so far, and the other parts will be added as they are finished. Click any image to open it at full size.
+    This page covers Parts 1.1 to 1.3 and 2.1 to 2.4 so far, and the other parts will be added as they are finished. Click any image to open it at full size.
   </p>
 
 
@@ -931,6 +932,107 @@ def laplacian_stack(gaussian):
   <p class="setup">
     Pikachu's left half and Charizard's right half meet along a smooth seam, and each half keeps its own fine fur
     detail. The white backgrounds blend without a visible edge, since both images are white on either side of the seam.
+  </p>
+
+  <h2 id="s7"><span class="secno">2.4</span> Multiresolution blending</h2>
+  <p class="setup">
+    Multiresolution blending combines two images by blending their Laplacian stacks level by level, weighted at
+    each level by a mask's own Gaussian stack (<code>blend_stacks</code>, from Part 2.3). Coarse levels blend over a
+    wide area and fine levels over a narrow one, since the mask's own blur widens with the level, which is what
+    keeps a sharp object sharp while its low frequencies fade smoothly into the background. A mask that is a step
+    function gives a straight seam, and the Oraple and the plush toys in Part 2.3 (Figures 26 and 30) already cover
+    that case. A mask that follows an object's silhouette instead of a straight line blends the object into a scene
+    without a visible edge, which is what this section adds.
+  </p>
+
+  <h3>Irregular mask</h3>
+  <p class="setup">
+    The two source images are a "this is fine" panel and a still of Spongebob relaxing in his living room. Spongebob
+    is cut out of his photo with <code>cv2.grabCut</code>, seeded with a rectangle around his head and torso that
+    excludes the armchair behind him and the floaty he sits on. The raw GrabCut mask has small holes where dark
+    details (his belt, his tie) get classified as background, so it is filled to its external contour, giving a
+    solid silhouette instead of a sticker with pinholes in it.
+  </p>
+
+<pre class="code"><code>def segment_grabcut(image, rect, iterations=10):
+    # Cut a rough foreground object out of a BGR uint8 image with GrabCut, seeded with a rectangle around it. Cleaned
+    # up with morphological open/close and filled to its external contour, so interior dark details (buttons, a belt)
+    # don't punch holes in the mask. Returns a float64 mask of 1s and 0s, the same size as the image
+    gc_mask = np.zeros(image.shape[:2], np.uint8)
+    bgd_model, fgd_model = np.zeros((1, 65), np.float64), np.zeros((1, 65), np.float64)
+    cv2.grabCut(image, gc_mask, rect, bgd_model, fgd_model, iterations, cv2.GC_INIT_WITH_RECT)
+    binary = np.where((gc_mask == cv2.GC_FGD) | (gc_mask == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, np.ones((11, 11), np.uint8))
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    largest = max(contours, key=cv2.contourArea)
+    solid = np.zeros_like(binary)
+    cv2.drawContours(solid, [largest], -1, 255, thickness=cv2.FILLED)
+    return (solid &gt; 0).astype(np.float64)
+
+def composite_masked(base, overlay, overlay_mask, top, left):
+    # Paste overlay (and its own mask) onto a copy of base at (top, left). Returns the composited image and a mask
+    # the same size as base, for blending against the unmodified base with an irregular (non-seam) mask
+    canvas = base.copy()
+    mask_full = np.zeros(base.shape[:2])
+    h, w = overlay.shape[:2]
+    region = canvas[top:top + h, left:left + w]
+    weight = overlay_mask[..., np.newaxis]
+    region[:] = overlay * weight + region * (1 - weight)
+    mask_full[top:top + h, left:left + w] = overlay_mask
+    return canvas, mask_full</code></pre>
+
+  <p class="setup">
+    The cutout is resized and pasted where the dog sits, large enough to cover its hat, ears and snout entirely, so
+    no trace of the dog is left once the mask is applied. The composite and the mask both use the same size as the
+    fire scene, and the mask is fed through <code>gaussian_stack</code> exactly as the vertical-seam mask was in
+    Part 2.3, so the two blend with the same code.
+  </p>
+
+  <div class="grid2">
+    <figure>
+      <a href="media/thisisfine.jpg" target="_blank" rel="noopener"><img src="media/thisisfine.jpg" width="261" height="261" loading="lazy" alt="A dog wearing a hat sits at a table in a room engulfed in flames, a cartoon panel captioned "this is fine""></a>
+      <figcaption><b>Figure 34a.</b> The scene the object is pasted into.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/spongebob.jpg" target="_blank" rel="noopener"><img src="media/spongebob.jpg" width="2000" height="1396" loading="lazy" alt="Spongebob Squarepants sits relaxed in an orange armchair in his pineapple house, holding a TV remote"></a>
+      <figcaption><b>Figure 34b.</b> The photo the object is cut from.</figcaption>
+    </figure>
+  </div>
+
+  <div class="grid3">
+    <figure>
+      <a href="media/meme_cutout.jpg" target="_blank" rel="noopener"><img src="media/meme_cutout.jpg" width="520" height="423" loading="lazy" alt="Spongebob's head and torso cut out of his photo, shown on a white background with no armchair or floaty"></a>
+      <figcaption><b>Figure 35a.</b> The cutout (masked input).</figcaption>
+    </figure>
+    <figure>
+      <a href="media/meme_mask.jpg" target="_blank" rel="noopener"><img src="media/meme_mask.jpg" width="261" height="261" loading="lazy" alt="A white blob in the rough shape of Spongebob's head and torso on a black background"></a>
+      <figcaption><b>Figure 35b.</b> The irregular mask.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/meme_blend.jpg" target="_blank" rel="noopener"><img src="media/meme_blend.jpg" width="261" height="261" loading="lazy" alt="Spongebob's head and torso blended into the burning room in place of the dog, with no hard edge visible"></a>
+      <figcaption><b>Figure 35c.</b> The blended result.</figcaption>
+    </figure>
+  </div>
+
+  <p class="setup">
+    Figure 36 shows the favorite result's Laplacian stack, in the same layout as Figure 3.42 in Part 2.3: Spongebob
+    and the fire scene weighted by the mask at three levels, and their sum. At level 0 the mask is almost as sharp as
+    the cutout itself, so the two columns barely overlap. At level 4 the mask has spread into a soft blob, so the two
+    columns blend into each other rather than meeting at a hard edge, which is what removes the sticker look from
+    the final sum.
+  </p>
+
+  <figure class="montage tall">
+    <a href="media/meme_figure.jpg" target="_blank" rel="noopener"><img src="media/meme_figure.jpg" width="1122" height="1291" loading="lazy" alt="A grid with three columns, Spongebob times the mask, the fire scene times one minus the mask and their sum, and four rows for the fine, medium and low-pass levels and the total of all levels"></a>
+    <figcaption><b>Figure 36.</b> Spongebob and the fire scene weighted by the mask at three levels, and the total over all levels.</figcaption>
+  </figure>
+
+  <p class="setup">
+    Together with the straight-seam Oraple and plush blends from Part 2.3, this covers the two additional pairs the
+    assignment asks for, with an irregular mask on this one, and doubles as the creative example: a cartoon character
+    dropped into an unrelated scene he was never photographed in, standing in for the dog without redrawing anything
+    by hand.
   </p>
 
 </main>

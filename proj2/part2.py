@@ -1,4 +1,4 @@
-from helper import unsharp, convol_symm_with_scipy, gaussian_kernel_cv, align_images, crop_to_valid, gaussian_blur, hybrid_image, gaussian_stack, laplacian_stack, blend_stacks, match_at_seam
+from helper import unsharp, convol_symm_with_scipy, gaussian_kernel_cv, align_images, crop_to_valid, gaussian_blur, hybrid_image, gaussian_stack, laplacian_stack, blend_stacks, match_at_seam, segment_grabcut, composite_masked
 from part1 import save_img
 import os
 import cv2
@@ -188,3 +188,56 @@ def run_part2p3(path_to_img_folder):
         row_labels = ["Level 0", "Level 2", "Level 4", "All levels"]
         save_img(f"{path_to_img_folder}/stack_{pair}_figure.jpg", make_montage(rows, row_labels, headers=headers, font_size=26))
         save_img(f"{path_to_img_folder}/stack_{pair}_blend.jpg", rgb_to_bgr_uint8(final))
+
+def run_part2p4(path_to_img_folder):
+    # Multiresolution blending. The straight-seam blends from 2.3 (Oraple and the plush toys) already cover the
+    # basic case: this adds an irregular-mask example, which follows an object's silhouette instead of a seam.
+    # Spongebob is cut out of his photo with GrabCut and pasted into the "this is fine" dog's spot, then blended in
+    # with the same Gaussian/Laplacian stacks, so the mask feathers his edge into the fire scene instead of pasting
+    # him on as a sticker
+    fire = load_rgb(os.path.join(path_to_img_folder, "thisisfine.jpg"))
+    sb_bgr = cv2.imread(os.path.join(path_to_img_folder, "spongebob.jpg"), cv2.IMREAD_COLOR)
+    sb_rgb = cv2.cvtColor(sb_bgr, cv2.COLOR_BGR2RGB) / 255.
+
+    # A rectangle around Spongebob's head and torso, excluding the armchair behind him and his floaty below
+    rect = (740, 500, 560, 500)
+    mask = segment_grabcut(sb_bgr, rect)
+    ys, xs = np.where(mask > 0)
+    top0, bottom0, left0, right0 = ys.min(), ys.max(), xs.min(), xs.max()
+    crop_img = sb_rgb[top0:bottom0, left0:right0]
+    crop_mask = mask[top0:bottom0, left0:right0]
+    save_img(f"{path_to_img_folder}/meme_cutout.jpg", rgb_to_bgr_uint8(crop_img * crop_mask[..., None] + (1 - crop_mask[..., None])))
+
+    # Resize and place him where the dog sits, big enough to cover its hat, ears and snout entirely
+    target_h, top, left = 175, 76, 45
+    scale = target_h / crop_img.shape[0]
+    target_w = round(crop_img.shape[1] * scale)
+    resized_img = cv2.resize(crop_img, (target_w, target_h), interpolation=cv2.INTER_AREA)
+    resized_mask = cv2.resize(crop_mask, (target_w, target_h), interpolation=cv2.INTER_AREA)
+    composite, mask_full = composite_masked(fire, resized_img, resized_mask, top, left)
+    save_img(f"{path_to_img_folder}/meme_composite.jpg", rgb_to_bgr_uint8(composite))
+    save_img(f"{path_to_img_folder}/meme_mask.jpg", clip_uint8(mask_full * 255))
+
+    levels, sigma, band_gain = 5, 2, 3
+    mask_stack = gaussian_stack(mask_full, levels, sigma)
+    laplacian_fire = laplacian_stack(gaussian_stack(fire, levels, sigma))
+    laplacian_composite = laplacian_stack(gaussian_stack(composite, levels, sigma))
+    # mask is 1 where Spongebob is, so his Laplacian stack goes first
+    blended_stack = blend_stacks(laplacian_composite, laplacian_fire, mask_stack)
+    blended = np.clip(blended_stack.sum(axis=0), 0, 1)
+    save_img(f"{path_to_img_folder}/meme_blend.jpg", rgb_to_bgr_uint8(blended))
+    print(f"meme: Spongebob cutout {crop_img.shape[1]}x{crop_img.shape[0]}, placed at {target_w}x{target_h}")
+
+    # The favorite result's Laplacian stack, same layout as Figure 3.42 in Part 2.3: the high, medium and low
+    # frequency levels of each source weighted by the mask, their sum, and the totals over all levels
+    part1 = mask_stack[..., np.newaxis] * laplacian_composite
+    part2 = (1 - mask_stack[..., np.newaxis]) * laplacian_fire
+    def show(level, image):
+        return image if level == levels - 1 else 0.5 + band_gain * image
+    rows = []
+    for level in [0, 2, 4]:
+        rows.append([show(level, part1[level]), show(level, part2[level]), show(level, blended_stack[level])])
+    rows.append([part1.sum(axis=0), part2.sum(axis=0), blended])
+    headers = ["Spongebob x mask", "Fire x (1 - mask)", "Sum"]
+    row_labels = ["Level 0", "Level 2", "Level 4", "All levels"]
+    save_img(f"{path_to_img_folder}/meme_figure.jpg", make_montage(rows, row_labels, headers=headers, font_size=26))
