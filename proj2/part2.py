@@ -74,9 +74,9 @@ def run_part2p2(path_to_img_folder):
     # The alignment points are (x, y) picked by hand instead of clicking: two on the first image, then the matching two on the second
     hybrids = [
         ("derek_nutmeg", "DerekPicture.jpg", "nutmeg.jpg", ((296, 344), (444, 332), (600, 289), (749, 367)), 2.5, 12, 2),
-        ("labubu", "labubu_pair_1.jpg", "labubu_pair_2.jpg", ((418, 664), (559, 675), (314, 691), (420, 692)), 3, 12, 2),
-        ("bird", "bird_pair_1.jpg", "bird_pair_2.jpg", ((278, 633), (217, 694), (231, 619), (198, 652)), 1.5, 8, 2),
-        ("dessert", "dessert_pair_2.jpg", "dessert_pair_1.jpg", ((350, 236), (350, 636), (357, 214), (436, 671)), 4, 12, 2),
+        ("labubu", "labubu_pair_1.jpg", "labubu_pair_2.jpg", ((418, 664), (559, 675), (314, 691), (420, 692)), 6, 12, 1.5),
+        ("bird", "bird_pair_1.jpg", "bird_pair_2.jpg", ((278, 633), (217, 694), (231, 619), (198, 652)), 3, 8, 1.5),
+        ("dessert", "dessert_pair_2.jpg", "dessert_pair_1.jpg", ((350, 236), (350, 636), (357, 214), (436, 671)), 7, 15, 1.5),
     ]
     for name, high_name, low_name, pts, sigma_high, sigma_low, gain in hybrids:
         im1 = load_rgb(os.path.join(path_to_img_folder, high_name))

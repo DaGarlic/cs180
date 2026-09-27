@@ -719,21 +719,23 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
   </p>
   <p class="setup">
     The best settings depend on the images. Derek's face and Nutmeg's fur are large, and both look right at
-    &sigma;<sub>1</sub>&nbsp;=&nbsp;2.5 and &sigma;<sub>2</sub>&nbsp;=&nbsp;12. The two beach photos are much alike,
-    so I had to keep the frequencies far apart to see any difference, with a fine &sigma;<sub>1</sub>&nbsp;=&nbsp;1.5
-    and &sigma;<sub>2</sub>&nbsp;=&nbsp;8, and even then it stays subtle. The dessert photos are larger (862 px tall against
-    686 for Derek), so they take a larger &sigma;<sub>1</sub>&nbsp;=&nbsp;4. A Gaussian with standard deviation
-    &sigma; pixels has a frequency response that falls to 61% at 1/(2&pi;&sigma;) cycles per pixel, which I take as the
-    cutoff.
+    &sigma;<sub>1</sub>&nbsp;=&nbsp;2.5 and &sigma;<sub>2</sub>&nbsp;=&nbsp;12. For my own photos I pushed
+    &sigma;<sub>1</sub> up, which lowers the high-pass cutoff so that more of the first image gets through: 6 for
+    the labubu, 7 for the dessert (a larger photo, 862 px tall against 686 for Derek) and 3 for the bird. The price is
+    a weaker far view, because the extra mid-frequency detail from the first image is still visible after shrinking, so
+    I paired the larger &sigma;<sub>1</sub> with a smaller gain of 1.5 and, for the dessert, a wider low-pass
+    (&sigma;<sub>2</sub>&nbsp;=&nbsp;15). The two beach photos are so much alike that the far view stays weak
+    whatever I choose, so the bird is a compromise. A Gaussian with standard deviation &sigma; pixels has a frequency
+    response that falls to 61% at 1/(2&pi;&sigma;) cycles per pixel, which I take as the cutoff.
   </p>
 
   <table class="data-table">
     <thead><tr><th>Hybrid</th><th>High frequencies from</th><th>Low frequencies from</th><th>High-pass</th><th>Low-pass</th><th>Gain</th></tr></thead>
     <tbody>
       <tr><td>Derek and Nutmeg</td><td>Derek</td><td>Nutmeg</td><td class="num">&sigma; = 2.5 (0.064)</td><td class="num">&sigma; = 12 (0.013)</td><td class="num">2</td></tr>
-      <tr><td>Labubu</td><td>Purple doll</td><td>Brown doll</td><td class="num">&sigma; = 3 (0.053)</td><td class="num">&sigma; = 12 (0.013)</td><td class="num">2</td></tr>
-      <tr><td>Bird</td><td>First beach photo</td><td>Second beach photo</td><td class="num">&sigma; = 1.5 (0.106)</td><td class="num">&sigma; = 8 (0.020)</td><td class="num">2</td></tr>
-      <tr><td>Dessert</td><td>Meringue tart</td><td>Red pastry</td><td class="num">&sigma; = 4 (0.040)</td><td class="num">&sigma; = 12 (0.013)</td><td class="num">2</td></tr>
+      <tr><td>Labubu</td><td>Purple doll</td><td>Brown doll</td><td class="num">&sigma; = 6 (0.027)</td><td class="num">&sigma; = 12 (0.013)</td><td class="num">1.5</td></tr>
+      <tr><td>Bird</td><td>First beach photo</td><td>Second beach photo</td><td class="num">&sigma; = 3 (0.053)</td><td class="num">&sigma; = 8 (0.020)</td><td class="num">1.5</td></tr>
+      <tr><td>Dessert</td><td>Meringue tart</td><td>Red pastry</td><td class="num">&sigma; = 7 (0.023)</td><td class="num">&sigma; = 15 (0.011)</td><td class="num">1.5</td></tr>
     </tbody>
   </table>
   <p class="sub" style="max-width:40rem">&sigma; is in pixels, and the cutoff in cycles per pixel is in brackets.</p>
