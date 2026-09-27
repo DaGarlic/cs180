@@ -233,8 +233,9 @@ def gaussian_blur(image, sigma):
     kernel_1d = cv2.getGaussianKernel(size, sigma)
     return convol_symm_with_scipy(convol_symm_with_scipy(image, kernel_1d), kernel_1d.T)
 
-def hybrid_image(im1, im2, sigma1, sigma2):
-    # High frequencies of im1 (the image minus its blur) plus the low frequencies of im2 (its blur)
-    high = im1 - gaussian_blur(im1, sigma1)
+def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
+    # High frequencies of im1 (the image minus its blur, times a gain so they stand out) plus the low
+    # frequencies of im2 (its blur)
+    high = gain * (im1 - gaussian_blur(im1, sigma1))
     low = gaussian_blur(im2, sigma2)
     return high + low
