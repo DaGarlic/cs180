@@ -1,7 +1,10 @@
 from math import pi, exp
+import math
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal
+import skimage.transform as sktr
 
 Dx = [[1, -1]]
 Dy = [[1], [-1]]
@@ -108,3 +111,130 @@ def unsharp_kernel(size, sigma, alpha):
 def unsharp(image, kernel, sigma, alpha=1.0):
     # Apply unsharp masking with a single convolution, alpha is how much of the high frequencies to add back
     return convol_symm_with_scipy(image, unsharp_kernel(kernel, sigma, alpha))
+
+# Image alignment for hybrid images (from the course starter code)
+
+def get_points(im1, im2):
+    # Click two corresponding points on each image (opens a window, so it needs a display)
+    print('Please select 2 points in each image for alignment.')
+    plt.imshow(im1)
+    p1, p2 = plt.ginput(2)
+    plt.close()
+    plt.imshow(im2)
+    p3, p4 = plt.ginput(2)
+    plt.close()
+    return (p1, p2, p3, p4)
+
+def recenter(im, r, c):
+    # Pad one side with zeros so that pixel (r, c) ends up at the center of the image
+    R, C = im.shape[:2]
+    rpad = int(np.abs(2*r+1 - R))
+    cpad = int(np.abs(2*c+1 - C))
+    pad_width = [(0 if r > (R-1)/2 else rpad, 0 if r < (R-1)/2 else rpad),
+                 (0 if c > (C-1)/2 else cpad, 0 if c < (C-1)/2 else cpad)]
+    if im.ndim == 3:
+        pad_width.append((0, 0))
+    return np.pad(im, pad_width, 'constant')
+
+def find_centers(p1, p2):
+    # Midpoint of the two clicked points
+    cx = np.round(np.mean([p1[0], p2[0]]))
+    cy = np.round(np.mean([p1[1], p2[1]]))
+    return cx, cy
+
+def align_image_centers(im1, im2, pts):
+    # Translate both images so the midpoint of their two points is at the center
+    p1, p2, p3, p4 = pts
+
+    cx1, cy1 = find_centers(p1, p2)
+    cx2, cy2 = find_centers(p3, p4)
+
+    im1 = recenter(im1, cy1, cx1)
+    im2 = recenter(im2, cy2, cx2)
+    return im1, im2
+
+def rescale_images(im1, im2, pts):
+    # Shrink the image with the larger distance between its two points so the distances match
+    p1, p2, p3, p4 = pts
+    len1 = np.sqrt((p2[1] - p1[1])**2 + (p2[0] - p1[0])**2)
+    len2 = np.sqrt((p4[1] - p3[1])**2 + (p4[0] - p3[0])**2)
+    dscale = len2/len1
+    channel_axis = -1 if im1.ndim == 3 else None
+    if dscale < 1:
+        im1 = sktr.rescale(im1, dscale, channel_axis=channel_axis)
+    else:
+        im2 = sktr.rescale(im2, 1./dscale, channel_axis=channel_axis)
+    return im1, im2
+
+def rotate_im1(im1, pts):
+    # Rotate the first image so the line between its two points has the same angle as in the second image
+    p1, p2, p3, p4 = pts
+    theta1 = math.atan2(-(p2[1] - p1[1]), (p2[0] - p1[0]))
+    theta2 = math.atan2(-(p4[1] - p3[1]), (p4[0] - p3[0]))
+    dtheta = theta2 - theta1
+    im1 = sktr.rotate(im1, dtheta*180/np.pi)
+    return im1, dtheta
+
+def match_img_size(im1, im2):
+    # Crop the larger image around its center so both have the same size
+    h1, w1 = im1.shape[:2]
+    h2, w2 = im2.shape[:2]
+    if h1 < h2:
+        im2 = im2[int(np.floor((h2-h1)/2.)) : -int(np.ceil((h2-h1)/2.)), :]
+    elif h1 > h2:
+        im1 = im1[int(np.floor((h1-h2)/2.)) : -int(np.ceil((h1-h2)/2.)), :]
+    if w1 < w2:
+        im2 = im2[:, int(np.floor((w2-w1)/2.)) : -int(np.ceil((w2-w1)/2.))]
+    elif w1 > w2:
+        im1 = im1[:, int(np.floor((w1-w2)/2.)) : -int(np.ceil((w1-w2)/2.))]
+    assert im1.shape == im2.shape
+    return im1, im2
+
+def align_images(im1, im2, pts=None):
+    # Align im1 to im2 by translation, scale and rotation. pts are the 4 clicked points (p1, p2 on im1 and
+    # p3, p4 on im2), if they aren't given you get to click them
+    if pts is None:
+        pts = get_points(im1, im2)
+    im1, im2 = align_image_centers(im1, im2, pts)
+    im1, im2 = rescale_images(im1, im2, pts)
+    im1, angle = rotate_im1(im1, pts)
+    im1, im2 = match_img_size(im1, im2)
+    return im1, im2
+
+def largest_rectangle(mask):
+    # Find the biggest rectangle that is all True in a boolean mask, as (top, bottom, left, right) with bottom
+    # and right exclusive. Go row by row, keeping how many True cells are stacked above each column
+    heights = np.zeros(mask.shape[1], dtype=int)
+    best_area, best = 0, (0, 0, 0, 0)
+    for r in range(mask.shape[0]):
+        heights = np.where(mask[r], heights + 1, 0)
+        stack = []
+        for c in range(len(heights) + 1):
+            h = heights[c] if c < len(heights) else 0
+            start = c
+            while stack and stack[-1][1] >= h:
+                start, stack_h = stack.pop()
+                if stack_h * (c - start) > best_area:
+                    best_area = stack_h * (c - start)
+                    best = (r - stack_h + 1, r + 1, start, c)
+            stack.append((start, h))
+    return best
+
+def crop_to_valid(im1, im2, shape1, shape2, pts):
+    # Aligning pads and rotates in black borders. Push all ones images through the same alignment to see
+    # which pixels are real picture, then crop both images to the biggest rectangle that is real in both
+    ones1, ones2 = align_images(np.ones(shape1[:2]), np.ones(shape2[:2]), pts)
+    top, bottom, left, right = largest_rectangle((ones1 > 0.999) & (ones2 > 0.999))
+    return im1[top:bottom, left:right], im2[top:bottom, left:right]
+
+def gaussian_blur(image, sigma):
+    # Blur with a separable Gaussian (two 1D passes), much faster than one 2D kernel when sigma is large
+    size = 2 * int(np.ceil(3 * sigma)) + 1
+    kernel_1d = cv2.getGaussianKernel(size, sigma)
+    return convol_symm_with_scipy(convol_symm_with_scipy(image, kernel_1d), kernel_1d.T)
+
+def hybrid_image(im1, im2, sigma1, sigma2):
+    # High frequencies of im1 (the image minus its blur) plus the low frequencies of im2 (its blur)
+    high = im1 - gaussian_blur(im1, sigma1)
+    low = gaussian_blur(im2, sigma2)
+    return high + low

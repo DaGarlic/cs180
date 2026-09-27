@@ -21,7 +21,7 @@ body {
 .doc > *        { max-width: 40rem; margin-inline: auto; }
 .doc > figure   { max-width: 54rem; }
 .doc > figure.narrow { max-width: 34rem; }
-.doc > .gif     { max-width: 560px; }
+.doc > .gif     { max-width: 420px; }
 
 h1 {
   font-size: clamp(2.1rem, 6vw, 2.7rem);
@@ -64,7 +64,6 @@ figcaption b { color: #141414; font-weight: 600; }
 
 @media (max-width: 640px) {
   body { font-size: 18px; }
-  .pair   { grid-template-columns: 1fr; }
   .stills { grid-template-columns: repeat(3, 1fr); }
 }
 

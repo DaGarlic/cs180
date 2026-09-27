@@ -19,6 +19,7 @@
     <a href="#s2"><span class="no">1.2</span> Edges</a>
     <a href="#s3"><span class="no">1.3</span> DoG</a>
     <a href="#s4"><span class="no">2.1</span> Sharpening</a>
+    <a href="#s5"><span class="no">2.2</span> Hybrid</a>
   </div>
 </nav>
 <main class="doc">
@@ -27,7 +28,7 @@
   <p class="sub">Project 2 &middot; Ariq Koh &middot; CS180, Fall 2026 &middot; convolution, edges and frequencies</p>
 
   <p class="setup">
-    This page covers Parts 1.1 to 1.3 and 2.1 so far, and I'll add the other parts as I finish them.
+    This page covers Parts 1.1 to 1.3, 2.1 and 2.2 so far, and I'll add the other parts as I finish them. Click any image to open it at full size.
   </p>
 
 
@@ -174,19 +175,19 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
 
   <div class="grid2">
     <figure>
-      <img src="media/paddling_gray.jpg" width="960" height="1280" loading="lazy" alt="Grayscale photo of a person paddling a stand-up paddleboard on a lake, with forested hills and clouds behind">
+      <a href="media/paddling_gray.jpg" target="_blank" rel="noopener"><img src="media/paddling_gray.jpg" width="960" height="1280" loading="lazy" alt="Grayscale photo of a person paddling a stand-up paddleboard on a lake, with forested hills and clouds behind"></a>
       <figcaption><b>Figure 1.</b> The input, read as grayscale.</figcaption>
     </figure>
     <figure>
-      <img src="media/box_filter.jpg" width="960" height="1280" loading="lazy" alt="The same photo blurred by a 9 by 9 box filter, with a dark border around the edges">
+      <a href="media/box_filter.jpg" target="_blank" rel="noopener"><img src="media/box_filter.jpg" width="960" height="1280" loading="lazy" alt="The same photo blurred by a 9 by 9 box filter, with a dark border around the edges"></a>
       <figcaption><b>Figure 2.</b> Convolved with the 9&times;9 box filter. It blurs the image, and the border is darker where the kernel overlaps the zero padding.</figcaption>
     </figure>
     <figure>
-      <img src="media/dx.jpg" width="960" height="1280" loading="lazy" alt="Absolute Dx response: bright thin lines along vertical edges such as tree trunks, the paddle and the person's legs, and black elsewhere">
+      <a href="media/dx.jpg" target="_blank" rel="noopener"><img src="media/dx.jpg" width="960" height="1280" loading="lazy" alt="Absolute Dx response: bright thin lines along vertical edges such as tree trunks, the paddle and the person's legs, and black elsewhere"></a>
       <figcaption><b>Figure 3.</b> Convolved with Dx. Vertical edges light up: the tree line, the paddle and the paddler's legs. Absolute value, scaled so the largest response is 255.</figcaption>
     </figure>
     <figure>
-      <img src="media/dy.jpg" width="960" height="1280" loading="lazy" alt="Absolute Dy response: bright lines along horizontal edges such as the horizon, the shoreline and the water ripples, and black elsewhere">
+      <a href="media/dy.jpg" target="_blank" rel="noopener"><img src="media/dy.jpg" width="960" height="1280" loading="lazy" alt="Absolute Dy response: bright lines along horizontal edges such as the horizon, the shoreline and the water ripples, and black elsewhere"></a>
       <figcaption><b>Figure 4.</b> Convolved with Dy. Horizontal edges light up: the ridge line, the shoreline and the water ripples. Absolute value, scaled so the largest response is 255.</figcaption>
     </figure>
   </div>
@@ -238,21 +239,21 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
     differences, so I set those to zero.
   </p>
 
-  <div class="grid2 wide">
+  <div class="grid2">
     <figure>
-      <img src="media/cameraman_gray.jpg" width="534" height="534" loading="lazy" alt="Grayscale photo of a man in a dark coat bending over a camera on a tripod, with buildings on the horizon and grass in the foreground">
+      <a href="media/cameraman_gray.jpg" target="_blank" rel="noopener"><img src="media/cameraman_gray.jpg" width="534" height="534" loading="lazy" alt="Grayscale photo of a man in a dark coat bending over a camera on a tripod, with buildings on the horizon and grass in the foreground"></a>
       <figcaption><b>Figure 5.</b> The input, cropped and read as grayscale.</figcaption>
     </figure>
     <figure>
-      <img src="media/cameraman_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude of the cameraman image: bright outlines of the man, the camera, the tripod and the horizon on a dark background, with faint speckle in the grass">
+      <a href="media/cameraman_magnitude.jpg" target="_blank" rel="noopener"><img src="media/cameraman_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude of the cameraman image: bright outlines of the man, the camera, the tripod and the horizon on a dark background, with faint speckle in the grass"></a>
       <figcaption><b>Figure 6.</b> Gradient magnitude. The outline, camera, tripod and horizon show up together, along with faint speckle from the grass. Scaled so the largest value is 255.</figcaption>
     </figure>
     <figure>
-      <img src="media/cameraman_dx.jpg" width="534" height="534" loading="lazy" alt="Absolute Dx response of the cameraman image: bright on vertical edges such as the tripod legs, the buildings on the horizon and the side of the coat">
+      <a href="media/cameraman_dx.jpg" target="_blank" rel="noopener"><img src="media/cameraman_dx.jpg" width="534" height="534" loading="lazy" alt="Absolute Dx response of the cameraman image: bright on vertical edges such as the tripod legs, the buildings on the horizon and the side of the coat"></a>
       <figcaption><b>Figure 7.</b> Ix, from Dx. Vertical edges light up: the tripod legs, the buildings on the horizon and the outline of the coat. Absolute value, scaled so the largest response is 255.</figcaption>
     </figure>
     <figure>
-      <img src="media/cameraman_dy.jpg" width="534" height="534" loading="lazy" alt="Absolute Dy response of the cameraman image: bright on horizontal edges such as the top of the camera, the shoulder and the horizon line">
+      <a href="media/cameraman_dy.jpg" target="_blank" rel="noopener"><img src="media/cameraman_dy.jpg" width="534" height="534" loading="lazy" alt="Absolute Dy response of the cameraman image: bright on horizontal edges such as the top of the camera, the shoulder and the horizon line"></a>
       <figcaption><b>Figure 8.</b> Iy, from Dy. Horizontal edges light up: the camera, the shoulder and the line of the horizon. Absolute value, scaled so the largest response is 255.</figcaption>
     </figure>
   </div>
@@ -263,21 +264,21 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
     Figure 9 shows four choices.
   </p>
 
-  <div class="grid2 wide">
+  <div class="grid2">
     <figure>
-      <img src="media/cameraman_edges_15.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 15: the outline is surrounded by dense speckle over the grass and the sky">
+      <a href="media/cameraman_edges_15.png" target="_blank" rel="noopener"><img src="media/cameraman_edges_15.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 15: the outline is surrounded by dense speckle over the grass and the sky"></a>
       <figcaption><b>Figure 9a.</b> Threshold 15 (12.6% of pixels). Too low: the grass and specks in the sky pass.</figcaption>
     </figure>
     <figure>
-      <img src="media/cameraman_edges_30.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 30: clean outline and tripod, with speckle still covering the grass">
+      <a href="media/cameraman_edges_30.png" target="_blank" rel="noopener"><img src="media/cameraman_edges_30.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 30: clean outline and tripod, with speckle still covering the grass"></a>
       <figcaption><b>Figure 9b.</b> Threshold 30 (6.4%). The outline and tripod are clean, but the grass still speckles the bottom.</figcaption>
     </figure>
     <figure>
-      <img src="media/cameraman_edges_45.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 45: clean outline, camera, tripod and most of the horizon, with little speckle">
+      <a href="media/cameraman_edges_45.png" target="_blank" rel="noopener"><img src="media/cameraman_edges_45.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 45: clean outline, camera, tripod and most of the horizon, with little speckle"></a>
       <figcaption><b>Figure 9c.</b> Threshold 45 (3.8%), the one I chose.</figcaption>
     </figure>
     <figure>
-      <img src="media/cameraman_edges_80.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 80: only the strongest edges remain and the camera detail and horizon are broken up">
+      <a href="media/cameraman_edges_80.png" target="_blank" rel="noopener"><img src="media/cameraman_edges_80.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 80: only the strongest edges remain and the camera detail and horizon are broken up"></a>
       <figcaption><b>Figure 9d.</b> Threshold 80 (1.7%). Too high: the camera detail and the horizon break up or vanish.</figcaption>
     </figure>
   </div>
@@ -309,13 +310,13 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
     blurred the image with it, and repeated the Part 1.2 procedure on the blurred result.
   </p>
 
-  <div class="grid2 wide">
+  <div class="grid2">
     <figure>
-      <img src="media/cameraman_gray.jpg" width="534" height="534" loading="lazy" alt="The cropped grayscale cameraman image before blurring">
+      <a href="media/cameraman_gray.jpg" target="_blank" rel="noopener"><img src="media/cameraman_gray.jpg" width="534" height="534" loading="lazy" alt="The cropped grayscale cameraman image before blurring"></a>
       <figcaption><b>Figure 10a.</b> Without blur (the input from Figure 5).</figcaption>
     </figure>
     <figure>
-      <img src="media/cameraman_blurred.jpg" width="534" height="534" loading="lazy" alt="The cameraman image after blurring with a 13 by 13 Gaussian, sigma 2">
+      <a href="media/cameraman_blurred.jpg" target="_blank" rel="noopener"><img src="media/cameraman_blurred.jpg" width="534" height="534" loading="lazy" alt="The cameraman image after blurring with a 13 by 13 Gaussian, sigma 2"></a>
       <figcaption><b>Figure 10b.</b> Blurred with the 13&times;13 Gaussian, &sigma;&nbsp;=&nbsp;2.</figcaption>
     </figure>
   </div>
@@ -353,8 +354,8 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
 
   <figure class="narrow">
     <div class="pair filters">
-      <img src="media/cameraman_dog_x.png" width="280" height="260" loading="lazy" alt="The DoG x filter: a light lobe on the left and a dark lobe on the right on a mid gray background">
-      <img src="media/cameraman_dog_y.png" width="260" height="280" loading="lazy" alt="The DoG y filter: a light lobe on top and a dark lobe below on a mid gray background">
+      <a href="media/cameraman_dog_x.png" target="_blank" rel="noopener"><img src="media/cameraman_dog_x.png" width="280" height="260" loading="lazy" alt="The DoG x filter: a light lobe on the left and a dark lobe on the right on a mid gray background"></a>
+      <a href="media/cameraman_dog_y.png" target="_blank" rel="noopener"><img src="media/cameraman_dog_y.png" width="260" height="280" loading="lazy" alt="The DoG y filter: a light lobe on top and a dark lobe below on a mid gray background"></a>
     </div>
     <figcaption>
       <b>Figure 11.</b> The DoG filters, DoG<sub>x</sub> (left, 13&times;14) and DoG<sub>y</sub> (right,
@@ -371,21 +372,21 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
     so the blur doesn't darken the edges and no fake frame appears.
   </p>
 
-  <div class="grid2 wide">
+  <div class="grid2">
     <figure>
-      <img src="media/cameraman_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude without blur: thin bright edges with faint speckle over the grass">
+      <a href="media/cameraman_magnitude.jpg" target="_blank" rel="noopener"><img src="media/cameraman_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude without blur: thin bright edges with faint speckle over the grass"></a>
       <figcaption><b>Figure 12a.</b> Gradient magnitude, no blur (Part 1.2).</figcaption>
     </figure>
     <figure>
-      <img src="media/cameraman_blur_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude after blurring: smooth, wider bright edges with almost no speckle over the grass">
+      <a href="media/cameraman_blur_magnitude.jpg" target="_blank" rel="noopener"><img src="media/cameraman_blur_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude after blurring: smooth, wider bright edges with almost no speckle over the grass"></a>
       <figcaption><b>Figure 12b.</b> Gradient magnitude, blurred first.</figcaption>
     </figure>
     <figure>
-      <img src="media/cameraman_edges_45.png" width="534" height="534" loading="lazy" alt="Binary edge map without blur at threshold 45: thin lines with some speckle in the grass">
+      <a href="media/cameraman_edges_45.png" target="_blank" rel="noopener"><img src="media/cameraman_edges_45.png" width="534" height="534" loading="lazy" alt="Binary edge map without blur at threshold 45: thin lines with some speckle in the grass"></a>
       <figcaption><b>Figure 12c.</b> Binarized edges, no blur, threshold 45.</figcaption>
     </figure>
     <figure>
-      <img src="media/cameraman_blur_edges.png" width="534" height="534" loading="lazy" alt="Binary edge map after blurring at threshold 15: thick clean outlines of the man, camera and tripod with no speckle in the grass">
+      <a href="media/cameraman_blur_edges.png" target="_blank" rel="noopener"><img src="media/cameraman_blur_edges.png" width="534" height="534" loading="lazy" alt="Binary edge map after blurring at threshold 15: thick clean outlines of the man, camera and tripod with no speckle in the grass"></a>
       <figcaption><b>Figure 12d.</b> Binarized edges, blurred first, threshold 15.</figcaption>
     </figure>
   </div>
@@ -398,13 +399,13 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
     rounding, and none of the 285,156 pixels differ in the binarized edges.
   </p>
 
-  <div class="grid2 wide">
+  <div class="grid2">
     <figure>
-      <img src="media/cameraman_dog_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude from the DoG filters, identical to the blurred two-step result">
+      <a href="media/cameraman_dog_magnitude.jpg" target="_blank" rel="noopener"><img src="media/cameraman_dog_magnitude.jpg" width="534" height="534" loading="lazy" alt="Gradient magnitude from the DoG filters, identical to the blurred two-step result"></a>
       <figcaption><b>Figure 13a.</b> Gradient magnitude from the DoG filters, matching Figure 12b.</figcaption>
     </figure>
     <figure>
-      <img src="media/cameraman_dog_edges.png" width="534" height="534" loading="lazy" alt="Binary edges from the DoG filters at threshold 15, identical to the blurred two-step result">
+      <a href="media/cameraman_dog_edges.png" target="_blank" rel="noopener"><img src="media/cameraman_dog_edges.png" width="534" height="534" loading="lazy" alt="Binary edges from the DoG filters at threshold 15, identical to the blurred two-step result"></a>
       <figcaption><b>Figure 13b.</b> Binarized edges from the DoG filters, threshold 15, matching Figure 12d.</figcaption>
     </figure>
   </div>
@@ -471,19 +472,19 @@ def unsharp(image, kernel, sigma, alpha=1.0):
 
   <div class="grid4 wide">
     <figure>
-      <img src="media/taj.jpg" width="300" height="300" loading="lazy" alt="The original taj.jpg photo of the Taj Mahal with a blue sky and gardens in front">
+      <a href="media/taj.jpg" target="_blank" rel="noopener"><img src="media/taj.jpg" width="300" height="300" loading="lazy" alt="The original taj.jpg photo of the Taj Mahal with a blue sky and gardens in front"></a>
       <figcaption><b>Figure 14a.</b> The original.</figcaption>
     </figure>
     <figure>
-      <img src="media/taj_blurred.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo blurred with a 5 by 5 Gaussian">
+      <a href="media/taj_blurred.jpg" target="_blank" rel="noopener"><img src="media/taj_blurred.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo blurred with a 5 by 5 Gaussian"></a>
       <figcaption><b>Figure 14b.</b> Blurred with the 5&times;5 Gaussian, &sigma;&nbsp;=&nbsp;1.</figcaption>
     </figure>
     <figure>
-      <img src="media/taj_highfreq.jpg" width="300" height="300" loading="lazy" alt="The high-frequency detail of the Taj Mahal photo: edges and carvings drawn in light and dark lines on a mid gray background">
+      <a href="media/taj_highfreq.jpg" target="_blank" rel="noopener"><img src="media/taj_highfreq.jpg" width="300" height="300" loading="lazy" alt="The high-frequency detail of the Taj Mahal photo: edges and carvings drawn in light and dark lines on a mid gray background"></a>
       <figcaption><b>Figure 14c.</b> The high frequencies, <i>I</i>&nbsp;&minus;&nbsp;<i>I</i>&nbsp;&lowast;&nbsp;<i>G</i>, scaled 4&times; around mid gray.</figcaption>
     </figure>
     <figure>
-      <img src="media/taj_sharpened_alpha1.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo after unsharp masking with alpha 1, with crisper edges">
+      <a href="media/taj_sharpened_alpha1.jpg" target="_blank" rel="noopener"><img src="media/taj_sharpened_alpha1.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo after unsharp masking with alpha 1, with crisper edges"></a>
       <figcaption><b>Figure 14d.</b> Sharpened, &alpha;&nbsp;=&nbsp;1.</figcaption>
     </figure>
   </div>
@@ -497,19 +498,19 @@ def unsharp(image, kernel, sigma, alpha=1.0):
 
   <div class="grid4 wide">
     <figure>
-      <img src="media/taj_sharpened_alpha0.5.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo sharpened with alpha 0.5, a mild change">
+      <a href="media/taj_sharpened_alpha0.5.jpg" target="_blank" rel="noopener"><img src="media/taj_sharpened_alpha0.5.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo sharpened with alpha 0.5, a mild change"></a>
       <figcaption><b>Figure 15a.</b> &alpha;&nbsp;=&nbsp;0.5.</figcaption>
     </figure>
     <figure>
-      <img src="media/taj_sharpened_alpha1.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo sharpened with alpha 1">
+      <a href="media/taj_sharpened_alpha1.jpg" target="_blank" rel="noopener"><img src="media/taj_sharpened_alpha1.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo sharpened with alpha 1"></a>
       <figcaption><b>Figure 15b.</b> &alpha;&nbsp;=&nbsp;1.</figcaption>
     </figure>
     <figure>
-      <img src="media/taj_sharpened_alpha2.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo sharpened with alpha 2, with clearly crisp edges">
+      <a href="media/taj_sharpened_alpha2.jpg" target="_blank" rel="noopener"><img src="media/taj_sharpened_alpha2.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo sharpened with alpha 2, with clearly crisp edges"></a>
       <figcaption><b>Figure 15c.</b> &alpha;&nbsp;=&nbsp;2.</figcaption>
     </figure>
     <figure>
-      <img src="media/taj_sharpened_alpha4.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo sharpened with alpha 4, with halos along the trees and a gritty texture on the marble">
+      <a href="media/taj_sharpened_alpha4.jpg" target="_blank" rel="noopener"><img src="media/taj_sharpened_alpha4.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo sharpened with alpha 4, with halos along the trees and a gritty texture on the marble"></a>
       <figcaption><b>Figure 15d.</b> &alpha;&nbsp;=&nbsp;4.</figcaption>
     </figure>
   </div>
@@ -523,15 +524,15 @@ def unsharp(image, kernel, sigma, alpha=1.0):
 
   <div class="grid3 wide">
     <figure>
-      <img src="media/taj.jpg" width="300" height="300" loading="lazy" alt="The original taj.jpg photo">
+      <a href="media/taj.jpg" target="_blank" rel="noopener"><img src="media/taj.jpg" width="300" height="300" loading="lazy" alt="The original taj.jpg photo"></a>
       <figcaption><b>Figure 16a.</b> The original.</figcaption>
     </figure>
     <figure>
-      <img src="media/taj_test_blurred.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo heavily blurred with an 11 by 11 Gaussian, sigma 1.5">
+      <a href="media/taj_test_blurred.jpg" target="_blank" rel="noopener"><img src="media/taj_test_blurred.jpg" width="300" height="300" loading="lazy" alt="The Taj Mahal photo heavily blurred with an 11 by 11 Gaussian, sigma 1.5"></a>
       <figcaption><b>Figure 16b.</b> Blurred, &sigma;&nbsp;=&nbsp;1.5.</figcaption>
     </figure>
     <figure>
-      <img src="media/taj_test_sharpened.jpg" width="300" height="300" loading="lazy" alt="The blurred Taj Mahal photo after sharpening with alpha 2, noticeably crisper than the blurred version but not identical to the original">
+      <a href="media/taj_test_sharpened.jpg" target="_blank" rel="noopener"><img src="media/taj_test_sharpened.jpg" width="300" height="300" loading="lazy" alt="The blurred Taj Mahal photo after sharpening with alpha 2, noticeably crisper than the blurred version but not identical to the original"></a>
       <figcaption><b>Figure 16c.</b> The blurred image sharpened again, &alpha;&nbsp;=&nbsp;2.</figcaption>
     </figure>
   </div>
@@ -564,32 +565,32 @@ def unsharp(image, kernel, sigma, alpha=1.0):
     &alpha;&nbsp;=&nbsp;1.
   </p>
 
-  <div class="grid2 wide">
+  <div class="grid2">
     <figure>
-      <img src="media/blurred_duck_small.jpg" width="750" height="1000" loading="lazy" alt="A plate of duck with corn and parsley on a white plate with the words the girl and the fig, slightly out of focus">
+      <a href="media/blurred_duck_small.jpg" target="_blank" rel="noopener"><img src="media/blurred_duck_small.jpg" width="750" height="1000" loading="lazy" alt="A plate of duck with corn and parsley on a white plate with the words the girl and the fig, slightly out of focus"></a>
       <figcaption><b>Figure 17a.</b> The original, shrunk to 1000 px.</figcaption>
     </figure>
     <figure>
-      <img src="media/blurred_duck_blurred.jpg" width="750" height="1000" loading="lazy" alt="The duck photo blurred with a 9 by 9 Gaussian, sigma 2">
+      <a href="media/blurred_duck_blurred.jpg" target="_blank" rel="noopener"><img src="media/blurred_duck_blurred.jpg" width="750" height="1000" loading="lazy" alt="The duck photo blurred with a 9 by 9 Gaussian, sigma 2"></a>
       <figcaption><b>Figure 17b.</b> Blurred, &sigma;&nbsp;=&nbsp;2.</figcaption>
     </figure>
     <figure>
-      <img src="media/blurred_duck_highfreq.jpg" width="750" height="1000" loading="lazy" alt="The high-frequency detail of the duck photo: the plate rim, the lettering and the parsley edges in light and dark lines on mid gray, with visible grain">
+      <a href="media/blurred_duck_highfreq.jpg" target="_blank" rel="noopener"><img src="media/blurred_duck_highfreq.jpg" width="750" height="1000" loading="lazy" alt="The high-frequency detail of the duck photo: the plate rim, the lettering and the parsley edges in light and dark lines on mid gray, with visible grain"></a>
       <figcaption><b>Figure 17c.</b> The high frequencies, scaled 4&times; around mid gray.</figcaption>
     </figure>
     <figure>
-      <img src="media/blurred_duck_sharpened_alpha1.jpg" width="750" height="1000" loading="lazy" alt="The duck photo after unsharp masking with alpha 1, with crisper lettering and parsley">
+      <a href="media/blurred_duck_sharpened_alpha1.jpg" target="_blank" rel="noopener"><img src="media/blurred_duck_sharpened_alpha1.jpg" width="750" height="1000" loading="lazy" alt="The duck photo after unsharp masking with alpha 1, with crisper lettering and parsley"></a>
       <figcaption><b>Figure 17d.</b> Sharpened, &alpha;&nbsp;=&nbsp;1.</figcaption>
     </figure>
   </div>
 
-  <div class="grid2 wide">
+  <div class="grid2">
     <figure>
-      <img src="media/blurred_fishes_small.jpg" width="750" height="1000" loading="lazy" alt="Silver fish swimming in blue water in an aquarium, slightly out of focus">
+      <a href="media/blurred_fishes_small.jpg" target="_blank" rel="noopener"><img src="media/blurred_fishes_small.jpg" width="750" height="1000" loading="lazy" alt="Silver fish swimming in blue water in an aquarium, slightly out of focus"></a>
       <figcaption><b>Figure 18a.</b> The original, shrunk to 1000 px.</figcaption>
     </figure>
     <figure>
-      <img src="media/blurred_fishes_sharpened_alpha1.jpg" width="750" height="1000" loading="lazy" alt="The fish photo after unsharp masking with alpha 1, with firmer fish edges">
+      <a href="media/blurred_fishes_sharpened_alpha1.jpg" target="_blank" rel="noopener"><img src="media/blurred_fishes_sharpened_alpha1.jpg" width="750" height="1000" loading="lazy" alt="The fish photo after unsharp masking with alpha 1, with firmer fish edges"></a>
       <figcaption><b>Figure 18b.</b> Sharpened, &alpha;&nbsp;=&nbsp;1.</figcaption>
     </figure>
   </div>
@@ -598,6 +599,242 @@ def unsharp(image, kernel, sigma, alpha=1.0):
     The lettering on the plate and the veins of the parsley come out crisper, and the edges and fins
     of the fish are firmer. Both photos have visible film grain, and sharpening amplifies it along
     with the detail (it is clearly visible in Figure 17c), which is the main cost here.
+  </p>
+
+  <h2 id="s5"><span class="secno">2.2</span> Hybrid images</h2>
+  <p class="setup">
+    A hybrid image (Oliva, Torralba and Schyns, SIGGRAPH 2006) mixes the high frequencies of one image with the
+    low frequencies of another. Up close the eye picks up the fine detail, so you see the first image. From far
+    away that detail is too small to see, and only the low frequencies are left, so you see the second. I take the
+    high frequencies of <i>I</i><sub>1</sub> as the image minus its Gaussian blur, which is the same as convolving
+    it with an impulse minus a Gaussian, and add the blur of <i>I</i><sub>2</sub>:
+  </p>
+
+  <math display="block" class="eq" aria-label="H equals the quantity I 1 minus I 1 convolved with G sigma 1, plus I 2 convolved with G sigma 2, which equals I 1 convolved with the quantity delta minus G sigma 1, plus I 2 convolved with G sigma 2">
+    <mrow>
+      <mi>H</mi><mo>=</mo>
+      <mo>(</mo><msub><mi>I</mi><mn>1</mn></msub><mo>&minus;</mo><msub><mi>I</mi><mn>1</mn></msub><mo>&lowast;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>1</mn></msub></msub><mo>)</mo>
+      <mo>+</mo><msub><mi>I</mi><mn>2</mn></msub><mo>&lowast;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>2</mn></msub></msub>
+    </mrow>
+  </math>
+  <math display="block" class="eq" aria-label="which equals I 1 convolved with the quantity delta minus G sigma 1, plus I 2 convolved with G sigma 2">
+    <mrow>
+      <mo>=</mo>
+      <msub><mi>I</mi><mn>1</mn></msub><mo>&lowast;</mo><mo>(</mo><mi>&delta;</mi><mo>&minus;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>1</mn></msub></msub><mo>)</mo>
+      <mo>+</mo><msub><mi>I</mi><mn>2</mn></msub><mo>&lowast;</mo><msub><mi>G</mi><msub><mi>&sigma;</mi><mn>2</mn></msub></msub>
+    </mrow>
+  </math>
+
+  <p class="setup">
+    Here <i>G</i><sub>&sigma;</sub> is a Gaussian with standard deviation &sigma; pixels, &delta; is the unit impulse, and
+    &sigma;<sub>1</sub> and &sigma;<sub>2</sub> set the two cutoff frequencies. The blur is done as two 1D passes,
+    because the &sigma; needed here would make a single 2D kernel slow.
+  </p>
+
+<pre class="code"><code>def gaussian_blur(image, sigma):
+    # Blur with a separable Gaussian (two 1D passes), much faster than one 2D kernel when sigma is large
+    size = 2 * int(np.ceil(3 * sigma)) + 1
+    kernel_1d = cv2.getGaussianKernel(size, sigma)
+    return convol_symm_with_scipy(convol_symm_with_scipy(image, kernel_1d), kernel_1d.T)
+
+def hybrid_image(im1, im2, sigma1, sigma2):
+    # High frequencies of im1 (the image minus its blur) plus the low frequencies of im2 (its blur)
+    high = im1 - gaussian_blur(im1, sigma1)
+    low = gaussian_blur(im2, sigma2)
+    return high + low</code></pre>
+
+  <h3>Aligning the images</h3>
+  <p class="setup">
+    The two images have to line up, or the low-frequency image reads as a different thing behind the detail. I pick
+    two matching points on each image, the eyes for Derek and Nutmeg, and the course starter code translates,
+    scales and rotates the first image so that the two points land on top of each other. I picked the points by
+    hand and stored them in the code instead of clicking them. The alignment pads and rotates in black borders, so
+    I then crop both images to the largest rectangle that is real picture in both.
+  </p>
+
+  <h3>Derek and Nutmeg</h3>
+  <p class="setup">
+    This is my favorite result, so it gets the whole process. Derek supplies the high frequencies and Nutmeg the
+    low ones.
+  </p>
+
+  <div class="grid2">
+    <figure>
+      <a href="media/DerekPicture.jpg" target="_blank" rel="noopener"><img src="media/DerekPicture.jpg" width="732" height="1024" loading="lazy" alt="Portrait of Derek, a man with short dark hair smiling, in a black shirt against a gray background"></a>
+      <figcaption><b>Figure 19a.</b> Derek, the high-frequency image.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/nutmeg.jpg" target="_blank" rel="noopener"><img src="media/nutmeg.jpg" width="1408" height="1056" loading="lazy" alt="Nutmeg, a long-haired tabby cat with green eyes, looking at the camera from a wooden shelf"></a>
+      <figcaption><b>Figure 19b.</b> Nutmeg, the low-frequency image.</figcaption>
+    </figure>
+  </div>
+
+  <p class="setup">
+    Figure 20 shows each step. The two aligned images (20a and 20b) are cropped to 433&times;686. Derek's image has
+    its blur removed (&sigma;<sub>1</sub>&nbsp;=&nbsp;3), leaving only the edges (20c, shifted to mid gray), and
+    Nutmeg's is blurred (&sigma;<sub>2</sub>&nbsp;=&nbsp;9, 20d). Adding them gives the hybrid (20e).
+  </p>
+
+  <div class="grid5 wide">
+    <figure>
+      <a href="media/derek_nutmeg_aligned1.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_aligned1.jpg" width="433" height="686" loading="lazy" alt="Derek's portrait after alignment, rotated and cropped"></a>
+      <figcaption><b>Figure 20a.</b> Derek, aligned.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/derek_nutmeg_aligned2.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_aligned2.jpg" width="433" height="686" loading="lazy" alt="Nutmeg's photo after alignment and cropping"></a>
+      <figcaption><b>Figure 20b.</b> Nutmeg, aligned.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/derek_nutmeg_high.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_high.jpg" width="433" height="686" loading="lazy" alt="Derek's high frequencies: thin light and dark outlines of his face on mid gray"></a>
+      <figcaption><b>Figure 20c.</b> Derek, high-pass.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/derek_nutmeg_low.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_low.jpg" width="433" height="686" loading="lazy" alt="Nutmeg's low frequencies: a heavily blurred cat"></a>
+      <figcaption><b>Figure 20d.</b> Nutmeg, low-pass.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/derek_nutmeg_hybrid.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_hybrid.jpg" width="433" height="686" loading="lazy" alt="The hybrid: Derek's face outlines over a blurred cat"></a>
+      <figcaption><b>Figure 20e.</b> The hybrid.</figcaption>
+    </figure>
+  </div>
+
+  <p class="setup">
+    Figure 21 shows the log magnitude of the 2D Fourier transform of the grayscale version of each image, all on the
+    same brightness scale, with the lowest frequencies in the center. The two inputs have energy at all
+    frequencies. Derek's high-pass image (21c) has an empty center, because the low frequencies were subtracted
+    out. Nutmeg's low-pass image (21d) is bright only near the center and dark further out, because everything above
+    the cutoff was blurred away. The hybrid (21e) has both: Nutmeg's low frequencies in the middle and Derek's
+    high ones around them. The bright cross through the center of each spectrum comes from the image borders.
+  </p>
+
+  <div class="grid5 wide">
+    <figure>
+      <a href="media/derek_nutmeg_fft_aligned1.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_fft_aligned1.jpg" width="433" height="686" loading="lazy" alt="Fourier spectrum of the aligned Derek image"></a>
+      <figcaption><b>Figure 21a.</b> Derek.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/derek_nutmeg_fft_aligned2.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_fft_aligned2.jpg" width="433" height="686" loading="lazy" alt="Fourier spectrum of the aligned Nutmeg image"></a>
+      <figcaption><b>Figure 21b.</b> Nutmeg.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/derek_nutmeg_fft_high.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_fft_high.jpg" width="433" height="686" loading="lazy" alt="Fourier spectrum of Derek's high-pass image, with a dark empty center"></a>
+      <figcaption><b>Figure 21c.</b> Derek, high-pass.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/derek_nutmeg_fft_low.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_fft_low.jpg" width="433" height="686" loading="lazy" alt="Fourier spectrum of Nutmeg's low-pass image, bright at the center and dark toward the edges"></a>
+      <figcaption><b>Figure 21d.</b> Nutmeg, low-pass.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/derek_nutmeg_fft_hybrid.jpg" target="_blank" rel="noopener"><img src="media/derek_nutmeg_fft_hybrid.jpg" width="433" height="686" loading="lazy" alt="Fourier spectrum of the hybrid, with both a bright center and detail further out"></a>
+      <figcaption><b>Figure 21e.</b> The hybrid.</figcaption>
+    </figure>
+  </div>
+
+  <h3>Viewing it</h3>
+  <p class="setup">
+    Look at the large copy in Figure 22 from close up, where you should see Derek. Then step back from the screen, or
+    zoom the page out, and Nutmeg should take over. The small copy next to it is the same image shrunk, which is
+    roughly what it looks like from far away.
+  </p>
+
+  <figure class="narrow">
+    <div class="viewing-row">
+      <a href="media/derek_nutmeg_hybrid.jpg" target="_blank" rel="noopener"><img class="near" src="media/derek_nutmeg_hybrid.jpg" width="433" height="686" loading="lazy" alt="The Derek and Nutmeg hybrid shown large"></a>
+      <a href="media/derek_nutmeg_hybrid.jpg" target="_blank" rel="noopener"><img class="far" src="media/derek_nutmeg_hybrid.jpg" width="433" height="686" loading="lazy" alt="The same hybrid shrunk to a small size, where it looks like a cat"></a>
+    </div>
+    <figcaption><b>Figure 22.</b> The hybrid at two sizes. Close up it is Derek, and small it is Nutmeg.</figcaption>
+  </figure>
+
+  <h3>Cutoff frequencies</h3>
+  <p class="setup">
+    I found the cutoffs by trying several pairs of &sigma;, and judging each result twice: at full size for the near
+    view, and shrunk to about a sixth of its width for the far view. With a large &sigma;<sub>1</sub> the high-pass
+    image keeps mid-frequency detail that survives the shrinking, so Derek was still visible from far away. Around
+    &sigma;<sub>1</sub>&nbsp;=&nbsp;3 he vanished and the cat took over, while his face stayed sharp up close. I kept
+    &sigma;<sub>2</sub> about three times &sigma;<sub>1</sub> so that there is a gap between the frequencies that
+    each image contributes. A Gaussian with standard deviation &sigma; pixels has a frequency response that falls to
+    61% at 1/(2&pi;&sigma;) cycles per pixel, which I take as the cutoff.
+  </p>
+
+  <table class="data-table">
+    <thead><tr><th>Hybrid</th><th>High frequencies from</th><th>Low frequencies from</th><th>High-pass</th><th>Low-pass</th></tr></thead>
+    <tbody>
+      <tr><td>Derek and Nutmeg</td><td>Derek</td><td>Nutmeg</td><td class="num">&sigma; = 3 (0.053)</td><td class="num">&sigma; = 9 (0.018)</td></tr>
+      <tr><td>Labubu</td><td>Purple doll</td><td>Brown doll</td><td class="num">&sigma; = 4 (0.040)</td><td class="num">&sigma; = 12 (0.013)</td></tr>
+      <tr><td>Bird</td><td>First beach photo</td><td>Second beach photo</td><td class="num">&sigma; = 4 (0.040)</td><td class="num">&sigma; = 12 (0.013)</td></tr>
+      <tr><td>Dessert</td><td>Meringue tart</td><td>Red pastry</td><td class="num">&sigma; = 4 (0.040)</td><td class="num">&sigma; = 12 (0.013)</td></tr>
+    </tbody>
+  </table>
+  <p class="sub" style="max-width:40rem">&sigma; is in pixels, and the cutoff in cycles per pixel is in brackets.</p>
+
+  <h3>More hybrids</h3>
+  <p class="setup">
+    These use my own photos. For each one the two inputs are shown in the order high frequencies, then low
+    frequencies, followed by the hybrid. Together with Derek and Nutmeg they morph a person into a cat, one doll into another and one dessert into
+    another, and one of them changes the viewpoint instead of the subject.
+  </p>
+
+  <div class="grid3">
+    <figure>
+      <a href="media/labubu_pair_1.jpg" target="_blank" rel="noopener"><img src="media/labubu_pair_1.jpg" width="750" height="1000" loading="lazy" alt="A purple plush Labubu doll held upside down in a hand, with large dark blue eyes"></a>
+      <figcaption><b>Figure 23a.</b> Purple doll, high frequencies.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/labubu_pair_2.jpg" target="_blank" rel="noopener"><img src="media/labubu_pair_2.jpg" width="750" height="1000" loading="lazy" alt="A brown plush Labubu doll held upside down in a hand, with brown eyes"></a>
+      <figcaption><b>Figure 23b.</b> Brown doll, low frequencies.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/labubu_hybrid.jpg" target="_blank" rel="noopener"><img src="media/labubu_hybrid.jpg" width="513" height="715" loading="lazy" alt="The hybrid: a brown plush doll with the purple doll's face lines over it"></a>
+      <figcaption><b>Figure 23c.</b> The hybrid, aligned on the eyes.</figcaption>
+    </figure>
+  </div>
+
+  <p class="setup">
+    The two dolls are held in almost the same pose, so aligning on their eyes lines up the faces. Up close you see the
+    purple doll's fur and face detail, and from far away it turns into the brown one.
+  </p>
+
+  <div class="grid3">
+    <figure>
+      <a href="media/dessert_pair_2.jpg" target="_blank" rel="noopener"><img src="media/dessert_pair_2.jpg" width="750" height="1000" loading="lazy" alt="A lemon meringue tart with a raspberry and a knife on a patterned plate"></a>
+      <figcaption><b>Figure 24a.</b> Meringue tart, high frequencies.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/dessert_pair_1.jpg" target="_blank" rel="noopener"><img src="media/dessert_pair_1.jpg" width="750" height="1000" loading="lazy" alt="A red raspberry pastry with cream on the same patterned plate"></a>
+      <figcaption><b>Figure 24b.</b> Red pastry, low frequencies.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/dessert_hybrid.jpg" target="_blank" rel="noopener"><img src="media/dessert_hybrid.jpg" width="576" height="862" loading="lazy" alt="The hybrid: the peaks of the meringue drawn over a red round pastry"></a>
+      <figcaption><b>Figure 24c.</b> The hybrid, aligned on the pastries.</figcaption>
+    </figure>
+  </div>
+
+  <p class="setup">
+    This one morphs one dessert into another. I swapped the roles compared with the other pairs, because it looks
+    better with the tart's sharp meringue peaks on top: they are drawn over the red pastry up close, and from far away
+    only the red round shape is left.
+  </p>
+
+  <div class="grid3">
+    <figure>
+      <a href="media/bird_pair_1.jpg" target="_blank" rel="noopener"><img src="media/bird_pair_1.jpg" width="750" height="1000" loading="lazy" alt="A seagull standing on a sandy beach next to a lake, with sand ripples in the foreground"></a>
+      <figcaption><b>Figure 25a.</b> First photo, high frequencies.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/bird_pair_2.jpg" target="_blank" rel="noopener"><img src="media/bird_pair_2.jpg" width="750" height="1000" loading="lazy" alt="The same beach photographed from farther back, with the seagull much smaller"></a>
+      <figcaption><b>Figure 25b.</b> Second photo, low frequencies.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/bird_hybrid.jpg" target="_blank" rel="noopener"><img src="media/bird_hybrid.jpg" width="405" height="540" loading="lazy" alt="The hybrid: a beach scene with one seagull, sand ripples and a dark hill"></a>
+      <figcaption><b>Figure 25c.</b> The hybrid, aligned on the seagull.</figcaption>
+    </figure>
+  </div>
+
+  <p class="setup">
+    Here the same beach and gull are seen from two distances, which is a change over time or position instead of a
+    change of object. I aligned the two on the gull's head and tail, so its size matches. This is the subtlest of the
+    four, because the scenes are so alike: the sand and gull detail comes from the first photo and the hill and sky
+    layout from the second, and there is no dramatic switch.
   </p>
 
 </main>

@@ -287,11 +287,14 @@ p code, li code, td code, figcaption code {
 .grid2 figure { margin: 0; }
 .grid2 figcaption { text-align: left; }
 
-/* wider grid so thin edge lines stay near 1:1 */
-.doc > .grid2.wide { max-width: 54rem; }
+/* keep two-up image grids compact: each image is about 260px wide */
+.doc > .grid2 { max-width: 34rem; }
+
+/* every image opens at full size when clicked, so detail is still one click away */
+figure a, .pair > a { display: block; cursor: zoom-in; }
 
 @media (max-width: 640px) {
-  .grid2 { grid-template-columns: 1fr; }
+  .grid2 { gap: .6rem; }
 }
 
 /* --- 3 and 4 column image rows -------------------------------------- */
@@ -307,11 +310,36 @@ p code, li code, td code, figcaption code {
 .doc > .grid3.wide, .doc > .grid4.wide { max-width: 54rem; }
 
 /* text right after an image grid needs some air */
-.grid2 + p, .grid3 + p, .grid4 + p { margin-top: 1.5rem; }
+.grid2 + p, .grid3 + p, .grid4 + p, .grid5 + p { margin-top: 1.5rem; }
 
 @media (max-width: 640px) {
-  .grid3 { grid-template-columns: 1fr; }
+  .grid3 { gap: .6rem; }
   .grid4 { grid-template-columns: 1fr 1fr; }
+}
+
+/* --- five-up rows (the hybrid process) and the near / far viewing demo ---------- */
+
+.grid5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: .8rem;
+  margin: 1.7rem auto 0;
+}
+.grid5 figure { margin: 0; }
+.grid5 figcaption { font-size: .74rem; }
+.doc > .grid5.wide { max-width: 54rem; }
+
+.viewing-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.6rem;
+}
+.viewing-row img.near { width: 220px; }
+.viewing-row img.far  { width: 55px; }
+
+@media (max-width: 640px) {
+  .grid5 { grid-template-columns: repeat(3, 1fr); gap: .6rem; }
 }
 
 /* --- equations (MathML) --------------------------------------------- */
