@@ -397,6 +397,11 @@ figure a, .pair > a { display: block; cursor: zoom-in; }
 .viewer output { display: block; margin-top: .3rem; text-align: center; }
 .viewers figcaption { text-align: center; }
 
+/* --- stack montages ----------------------------------------------------- */
+
+.doc > figure.montage { max-width: 46rem; }
+.doc > figure.montage.tall { max-width: 31rem; }
+
 /* --- equations (MathML) --------------------------------------------- */
 
 math.eq {

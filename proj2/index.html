@@ -20,6 +20,7 @@
     <a href="#s3"><span class="no">1.3</span> DoG</a>
     <a href="#s4"><span class="no">2.1</span> Sharpening</a>
     <a href="#s5"><span class="no">2.2</span> Hybrid</a>
+    <a href="#s6"><span class="no">2.3</span> Stacks</a>
   </div>
 </nav>
 <main class="doc">
@@ -28,7 +29,7 @@
   <p class="sub">Project 2 &middot; Ariq Koh &middot; CS180, Fall 2026 &middot; convolution, edges and frequencies</p>
 
   <p class="setup">
-    This page covers Parts 1.1 to 1.3, 2.1 and 2.2 so far, and the other parts will be added as they are finished. Click any image to open it at full size.
+    This page covers Parts 1.1 to 1.3 and 2.1 to 2.3 so far, and the other parts will be added as they are finished. Click any image to open it at full size.
   </p>
 
 
@@ -788,6 +789,147 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
 
   <p class="setup">
     This one changes a gull's pose instead of swapping objects. The two photos are aligned on the railing, using two points on the far edge of its top board in each, which turns the first photo about 7&deg; and shrinks the second to about 79%. The gulls are in different places along the railing, so they don't land on top of each other: the standing gull is drawn in fine outlines on the right, and the wings-spread one is a soft white shape on the left. The standing gull's high frequencies have a gain of 0.65 so that the white shape is easier to see, and from far away it is what is left.
+  </p>
+
+  <h2 id="s6"><span class="secno">2.3</span> Gaussian and Laplacian stacks</h2>
+  <p class="setup">
+    A Gaussian stack blurs an image with a wider Gaussian at each level. Unlike a pyramid it never subsamples, so every
+    level keeps the full size of the image and all the levels sit in one array. Level 0 is the image itself, and each
+    level after it blurs the original with a Gaussian twice as wide as the one before. A Laplacian stack takes the
+    difference between neighboring Gaussian levels, so each level holds one band of frequencies, and it keeps the
+    blurriest Gaussian level at the end. The levels add back up to the image:
+  </p>
+
+  <math display="block" class="eq" aria-label="L i equals G i minus G i plus 1, and the last level L N equals G N">
+    <mrow>
+      <msub><mi>L</mi><mi>i</mi></msub><mo>=</mo><msub><mi>G</mi><mi>i</mi></msub><mo>&minus;</mo><msub><mi>G</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub>
+      <mspace width="2em"></mspace>
+      <msub><mi>L</mi><mi>N</mi></msub><mo>=</mo><msub><mi>G</mi><mi>N</mi></msub>
+    </mrow>
+  </math>
+  <math display="block" class="eq" aria-label="The image I equals the sum of L i for i from 0 to N">
+    <mrow>
+      <mi>I</mi><mo>=</mo>
+      <munderover><mo>&sum;</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mi>N</mi></munderover>
+      <msub><mi>L</mi><mi>i</mi></msub>
+    </mrow>
+  </math>
+
+  <p class="setup">
+    Neither stack uses <code>cv2.pyrDown</code> or <code>skimage.transform.pyramid_gaussian</code>. Each blurred level
+    uses the separable Gaussian blur from the hybrid images, and there are five levels in all. The Laplacian levels add
+    back to each image to within about 1e-16.
+  </p>
+
+<pre class="code"><code>def gaussian_stack(image, levels, sigma=4):
+    # Gaussian stack: level 0 is the image, and every level after it blurs the image with a Gaussian twice as wide as
+    # the level before. Nothing is subsampled, so all levels keep the size of the image
+    stack = [image]
+    for i in range(1, levels):
+        stack.append(gaussian_blur(image, sigma * 2 ** (i - 1)))
+    return np.array(stack)
+
+def laplacian_stack(gaussian):
+    # Laplacian stack: the difference between neighboring Gaussian levels, with the blurriest Gaussian level kept at the
+    # end, so the levels add back up to the image
+    stack = []
+    for i in range(len(gaussian) - 1):
+        stack.append(gaussian[i] - gaussian[i + 1])
+    stack.append(gaussian[-1])
+    return np.array(stack)</code></pre>
+
+  <h3>Oraple</h3>
+  <p class="setup">
+    The course's apple and orange images (300&times;300) come first, with &sigma;&nbsp;=&nbsp;2, 4, 8 and 16 for the
+    blurred levels. Figure 26 shows the two images and the blend built from their stacks.
+  </p>
+
+  <div class="grid3">
+    <figure>
+      <a href="media/apple.jpeg" target="_blank" rel="noopener"><img src="media/apple.jpeg" width="300" height="300" loading="lazy" alt="A red apple with a green stem in front of a green cloth background"></a>
+      <figcaption><b>Figure 26a.</b> Apple.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/orange.jpeg" target="_blank" rel="noopener"><img src="media/orange.jpeg" width="300" height="300" loading="lazy" alt="An orange in front of a green cloth background"></a>
+      <figcaption><b>Figure 26b.</b> Orange.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/stack_oraple_blend.jpg" target="_blank" rel="noopener"><img src="media/stack_oraple_blend.jpg" width="300" height="300" loading="lazy" alt="The blend of the left half of the apple and the right half of the orange, joined along a smooth vertical seam"></a>
+      <figcaption><b>Figure 26c.</b> The blend.</figcaption>
+    </figure>
+  </div>
+
+  <p class="setup">
+    Figures 27 and 28 show the Gaussian stack on top and the Laplacian stack below it for each image. Level 0 of the
+    Laplacian stack holds only the finest detail, such as the speckle of the skin and the outline of the fruit, and each
+    level after it holds coarser structure. Level 4 is the blurry remainder that carries the overall color.
+  </p>
+
+  <figure class="montage">
+    <a href="media/stack_oraple_apple.jpg" target="_blank" rel="noopener"><img src="media/stack_oraple_apple.jpg" width="1770" height="726" loading="lazy" alt="Gaussian stack of the apple with five increasingly blurred levels above its Laplacian stack, where the first four levels are gray band-pass images and the last is a blurry color image"></a>
+    <figcaption><b>Figure 27.</b> Gaussian stack (top) and Laplacian stack (bottom) of the apple. The band levels are scaled up 3&times; and shifted to mid gray.</figcaption>
+  </figure>
+  <figure class="montage">
+    <a href="media/stack_oraple_orange.jpg" target="_blank" rel="noopener"><img src="media/stack_oraple_orange.jpg" width="1770" height="726" loading="lazy" alt="Gaussian stack of the orange with five increasingly blurred levels above its Laplacian stack"></a>
+    <figcaption><b>Figure 28.</b> The same for the orange.</figcaption>
+  </figure>
+
+  <p class="setup">
+    Figure 29 recreates Szeliski's Figure 3.42. The mask is 1 on the left half and 0 on the right, and its own Gaussian
+    stack gives the weight at each level, so the seam is sharp at level 0 and gets wider at every coarser level. The
+    rows show levels 0, 2 and 4. The first two columns are the apple and the orange weighted by the mask, and the third
+    column is their sum. The last row adds up all the levels, and the sum in the last column is the blended image.
+  </p>
+
+<pre class="code"><code>def blend_stacks(laplacian_a, laplacian_b, mask_gaussian):
+    # Blend two Laplacian stacks level by level, weighting level i of the first by level i of the mask's Gaussian stack
+    # and level i of the second by what is left. Returns every blended level, and their sum is the blended image
+    mask = mask_gaussian[..., np.newaxis]
+    return mask * laplacian_a + (1 - mask) * laplacian_b</code></pre>
+
+  <figure class="montage tall">
+    <a href="media/stack_oraple_figure.jpg" target="_blank" rel="noopener"><img src="media/stack_oraple_figure.jpg" width="1122" height="1291" loading="lazy" alt="A grid with three columns, the apple times the mask, the orange times one minus the mask and their sum, and four rows for the fine, medium and low-pass levels and the total of all levels"></a>
+    <figcaption><b>Figure 29.</b> The apple and orange weighted by the mask at three levels, and the total over all levels.</figcaption>
+  </figure>
+
+  <h3>Plush toys</h3>
+  <p class="setup">
+    The same procedure runs on two plush toys, Pikachu and Charizard (1200&times;1200), with
+    &sigma;&nbsp;=&nbsp;4, 8, 16 and 32 for the blurred levels, since the images are four times larger.
+  </p>
+
+  <div class="grid3">
+    <figure>
+      <a href="media/pikachu.jpg" target="_blank" rel="noopener"><img src="media/pikachu.jpg" width="1200" height="1200" loading="lazy" alt="A yellow Pikachu plush toy with black-tipped ears and red cheeks on a white background"></a>
+      <figcaption><b>Figure 30a.</b> Pikachu.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/charizard.jpg" target="_blank" rel="noopener"><img src="media/charizard.jpg" width="1200" height="1200" loading="lazy" alt="An orange Charizard plush toy with teal wings on a white background"></a>
+      <figcaption><b>Figure 30b.</b> Charizard.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/stack_plush_blend.jpg" target="_blank" rel="noopener"><img src="media/stack_plush_blend.jpg" width="1200" height="1200" loading="lazy" alt="A plush toy that is Pikachu on its left half and Charizard on its right half, joined along a smooth vertical seam"></a>
+      <figcaption><b>Figure 30c.</b> The blend.</figcaption>
+    </figure>
+  </div>
+
+  <figure class="montage">
+    <a href="media/stack_plush_pikachu.jpg" target="_blank" rel="noopener"><img src="media/stack_plush_pikachu.jpg" width="1770" height="726" loading="lazy" alt="Gaussian stack of the Pikachu plush with five increasingly blurred levels above its Laplacian stack"></a>
+    <figcaption><b>Figure 31.</b> Gaussian stack (top) and Laplacian stack (bottom) of Pikachu.</figcaption>
+  </figure>
+  <figure class="montage">
+    <a href="media/stack_plush_charizard.jpg" target="_blank" rel="noopener"><img src="media/stack_plush_charizard.jpg" width="1770" height="726" loading="lazy" alt="Gaussian stack of the Charizard plush with five increasingly blurred levels above its Laplacian stack"></a>
+    <figcaption><b>Figure 32.</b> The same for Charizard.</figcaption>
+  </figure>
+
+  <figure class="montage tall">
+    <a href="media/stack_plush_figure.jpg" target="_blank" rel="noopener"><img src="media/stack_plush_figure.jpg" width="1122" height="1291" loading="lazy" alt="A grid with three columns, Pikachu times the mask, Charizard times one minus the mask and their sum, and four rows for the fine, medium and low-pass levels and the total of all levels"></a>
+    <figcaption><b>Figure 33.</b> Pikachu and Charizard weighted by the mask at three levels, and the total over all levels.</figcaption>
+  </figure>
+
+  <p class="setup">
+    Pikachu's left half and Charizard's right half meet along a smooth seam, and each half keeps its own fine fur
+    detail. The white backgrounds blend without a visible edge, since both images are white on either side of the seam.
   </p>
 
 </main>

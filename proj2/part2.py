@@ -1,8 +1,9 @@
-from helper import unsharp, convol_symm_with_scipy, gaussian_kernel_cv, align_images, crop_to_valid, gaussian_blur, hybrid_image
+from helper import unsharp, convol_symm_with_scipy, gaussian_kernel_cv, align_images, crop_to_valid, gaussian_blur, hybrid_image, gaussian_stack, laplacian_stack, blend_stacks
 from part1 import save_img
 import os
 import cv2
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
 def shrink(image, longest_side):
     # Downscale so the longer side is at most longest_side pixels (leaves smaller images alone)
@@ -109,3 +110,76 @@ def run_part2p2(path_to_img_folder):
         for part, spectrum in spectra.items():
             save_img(f"{path_to_img_folder}/{name}_fft_{part}.jpg", clip_uint8((spectrum - lowest) / (highest - lowest) * 255))
         print(f"{name}: {aligned1.shape[1]}x{aligned1.shape[0]}, sigma {sigma_high} (high pass) and {sigma_low} (low pass), gain {gain}")
+
+def make_montage(tiles, row_labels, tile_labels=None, headers=None, tile_size=300, gap=10, font_size=30):
+    # Lay RGB float tiles (values 0 to 1) out on a paper colored canvas, with a label for each row on the left, an optional
+    # label under every tile and an optional header over each column. The text is large because the montage is shown small
+    font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", font_size)
+    left = int(font_size * 7)
+    label_h = int(font_size * 1.6) if tile_labels else 0
+    top = int(font_size * 1.6) if headers else 0
+    rows, cols = len(tiles), len(tiles[0])
+    canvas = Image.new("RGB", (left + cols * tile_size + (cols + 1) * gap, top + rows * (tile_size + label_h + gap) + gap), (250, 247, 241))
+    draw = ImageDraw.Draw(canvas)
+    for c in range(cols):
+        if headers:
+            draw.text((left + gap + c * (tile_size + gap), gap), headers[c], fill=(60, 55, 45), font=font)
+    for r in range(rows):
+        y = top + gap + r * (tile_size + label_h + gap)
+        draw.text((gap, y + tile_size // 2 - font_size // 2), row_labels[r], fill=(138, 43, 43), font=font)
+        for c in range(cols):
+            tile = cv2.resize(clip_uint8(tiles[r][c] * 255), (tile_size, tile_size), interpolation=cv2.INTER_AREA)
+            x = left + gap + c * (tile_size + gap)
+            canvas.paste(Image.fromarray(tile), (x, y))
+            if tile_labels:
+                draw.text((x, y + tile_size + font_size // 3), tile_labels[r][c], fill=(60, 55, 45), font=font)
+    return np.array(canvas)[:, :, ::-1]
+
+def run_part2p3(path_to_img_folder):
+    # (name, first image, second image, names to show, sigma of the first blurred level). The left half of the blend
+    # is the first image. The blur doubles at every level, so the smaller Oraple images start at a smaller sigma
+    pairs = [
+        ("oraple", "apple.jpeg", "orange.jpeg", ("apple", "orange"), 2),
+        ("plush", "pikachu.jpg", "charizard.jpg", ("pikachu", "charizard"), 4),
+    ]
+    levels = 5
+    band_gain = 3
+    for pair, name1, name2, names, sigma in pairs:
+        im1 = load_rgb(os.path.join(path_to_img_folder, name1))
+        im2 = load_rgb(os.path.join(path_to_img_folder, name2))
+        blur_labels = ["original"] + [f"\u03c3 = {sigma * 2 ** (i - 1)}" for i in range(1, levels)]
+
+        # Gaussian and Laplacian stacks of both images, shown as a montage per image. The band-pass levels of the
+        # Laplacian stack are small, so they are scaled up and shifted to mid gray to be visible
+        laplacians = []
+        for name, image in zip(names, [im1, im2]):
+            gaussian = gaussian_stack(image, levels, sigma)
+            laplacian = laplacian_stack(gaussian)
+            laplacians.append(laplacian)
+            print(f"{pair}, {name}: Laplacian levels add back to the image, max difference {np.abs(laplacian.sum(axis=0) - image).max():.1e}")
+            shown = [0.5 + band_gain * laplacian[i] for i in range(levels - 1)] + [laplacian[-1]]
+            labels = [[f"Level {i}: {blur_labels[i]}" for i in range(levels)],
+                      [f"Level {i}: " + ("band" if i < levels - 1 else "low-pass") for i in range(levels)]]
+            save_img(f"{path_to_img_folder}/stack_{pair}_{name}.jpg", make_montage([list(gaussian), shown], ["Gaussian", "Laplacian"], tile_labels=labels))
+
+        # Blend with a vertical seam: the mask is 1 on the left half, and its own Gaussian stack sets how wide the seam is at each level
+        mask = np.zeros(im1.shape[:2])
+        mask[:, :im1.shape[1] // 2] = 1
+        mask_stack = gaussian_stack(mask, levels, sigma)
+        part1 = mask_stack[..., np.newaxis] * laplacians[0]
+        part2 = (1 - mask_stack[..., np.newaxis]) * laplacians[1]
+        blended = blend_stacks(laplacians[0], laplacians[1], mask_stack)
+
+        # Szeliski's Figure 3.42: the high, medium and low frequency levels of each image weighted by the mask, their sum,
+        # and the totals over all levels
+        def show(level, image):
+            return image if level == levels - 1 else 0.5 + band_gain * image
+        rows = []
+        for level in [0, 2, 4]:
+            rows.append([show(level, part1[level]), show(level, part2[level]), show(level, blended[level])])
+        final = np.clip(blended.sum(axis=0), 0, 1)
+        rows.append([part1.sum(axis=0), part2.sum(axis=0), final])
+        headers = [f"{names[0].capitalize()} x mask", f"{names[1].capitalize()} x (1 - mask)", "Sum"]
+        row_labels = ["Level 0", "Level 2", "Level 4", "All levels"]
+        save_img(f"{path_to_img_folder}/stack_{pair}_figure.jpg", make_montage(rows, row_labels, headers=headers, font_size=26))
+        save_img(f"{path_to_img_folder}/stack_{pair}_blend.jpg", rgb_to_bgr_uint8(final))

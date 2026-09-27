@@ -239,3 +239,26 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
     high = gain * (im1 - gaussian_blur(im1, sigma1))
     low = gaussian_blur(im2, sigma2)
     return high + low
+
+def gaussian_stack(image, levels, sigma=4):
+    # Gaussian stack: level 0 is the image, and every level after it blurs the image with a Gaussian twice as wide as
+    # the level before. Nothing is subsampled, so all levels keep the size of the image
+    stack = [image]
+    for i in range(1, levels):
+        stack.append(gaussian_blur(image, sigma * 2 ** (i - 1)))
+    return np.array(stack)
+
+def laplacian_stack(gaussian):
+    # Laplacian stack: the difference between neighboring Gaussian levels, with the blurriest Gaussian level kept at the
+    # end, so the levels add back up to the image
+    stack = []
+    for i in range(len(gaussian) - 1):
+        stack.append(gaussian[i] - gaussian[i + 1])
+    stack.append(gaussian[-1])
+    return np.array(stack)
+
+def blend_stacks(laplacian_a, laplacian_b, mask_gaussian):
+    # Blend two Laplacian stacks level by level, weighting level i of the first by level i of the mask's Gaussian stack
+    # and level i of the second by what is left. Returns every blended level, and their sum is the blended image
+    mask = mask_gaussian[..., np.newaxis]
+    return mask * laplacian_a + (1 - mask) * laplacian_b
