@@ -28,7 +28,7 @@
   <p class="sub">Project 2 &middot; Ariq Koh &middot; CS180, Fall 2026 &middot; convolution, edges and frequencies</p>
 
   <p class="setup">
-    This page covers Parts 1.1 to 1.3, 2.1 and 2.2 so far, and I'll add the other parts as I finish them. Click any image to open it at full size.
+    This page covers Parts 1.1 to 1.3, 2.1 and 2.2 so far, and the other parts will be added as they are finished. Click any image to open it at full size.
   </p>
 
 
@@ -36,8 +36,7 @@
   <p class="setup">
     Convolving an image with a kernel means flipping the kernel, sliding it over the
     image, and at every position multiplying it against the pixels underneath and summing
-    the result. I wrote this in <code>numpy</code> only, first with four nested loops and then with
-    two, on a zero-padded copy of the image. <code>scipy.signal.convolve2d</code> is used only
+    the result. Here it is written in <code>numpy</code> only, first with four nested loops and then with two, on a zero-padded copy of the image. <code>scipy.signal.convolve2d</code> is used only
     as the reference to check against, and <code>cv2</code> only reads and saves images.
   </p>
 
@@ -78,9 +77,7 @@
 
   <h3>Two loops</h3>
   <p class="setup">
-    The two inner loops are replaced by one array operation. I slice out the
-    kernel-sized window of the padded image at the current pixel, multiply it elementwise
-    with the flipped kernel, and sum the result with <code>np.sum</code>.
+    The two inner loops are replaced by one array operation. The kernel-sized window of the padded image at the current pixel is sliced out, multiplied elementwise with the flipped kernel, and summed with <code>np.sum</code>.
   </p>
 
 <pre class="code"><code>def convol_img_2loops(image, kernel, mode="same"):
@@ -122,9 +119,7 @@ def box_kernel(size):
 
   <h3>Checking against scipy</h3>
   <p class="setup">
-    The reference call zero-fills the border the same way my padding does. I run all
-    three implementations on the same image and kernel, in both padding modes, and
-    take the largest difference between their outputs.
+    The reference call zero-fills the border the same way the padding above does. All three implementations run on the same image and kernel, in both padding modes, and the largest difference between their outputs is taken.
   </p>
 
 <pre class="code"><code>def convol_with_scipy(image, kernel, mode="same"):
@@ -138,10 +133,7 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
 
   <h3>Results</h3>
   <p class="setup">
-    I read the photo as grayscale with <code>cv2.imread(..., cv2.IMREAD_GRAYSCALE)</code> and
-    convolved it with the 9&times;9 box filter, Dx and Dy, using "same" padding. The
-    four-loop, two-loop and <code>scipy</code> outputs are identical, and the saved images
-    below are from my four-loop version.
+    The photo is read as grayscale with <code>cv2.imread(..., cv2.IMREAD_GRAYSCALE)</code> and convolved with the 9&times;9 box filter, Dx and Dy, using "same" padding. The four-loop, two-loop and <code>scipy</code> outputs are identical, and the saved images below come from the four-loop version.
   </p>
 
   <div class="grid2">
@@ -165,7 +157,7 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
 
   <h3>Runtime</h3>
   <p class="setup">
-    I timed each implementation once on the full 1280&times;960 image.
+    Each implementation was timed once on the full 1280&times;960 image.
   </p>
 
   <table class="data-table runtime">
@@ -181,7 +173,7 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
   </table>
 
   <p class="setup">
-    The four-loop version does one Python-level multiply-add per kernel entry per pixel, about 100 million of them for the 9&times;9 box filter, so its time grows with the kernel: 26 s for the box filter against about 1 s for the two-entry Dx and Dy. The two-loop version makes a handful of NumPy calls per pixel instead, so its time barely depends on the kernel, about 2.5 s for all three. That makes it roughly 10 times faster for the box filter, but about 2.5 times slower for Dx and Dy, where the four-loop version only has two products to add and NumPy's per-call overhead costs more than it saves. <code>scipy</code> is much faster than either: 0.084 s for the box filter, about 30 times faster than my two-loop version and 300 times faster than the four-loop one, and about 0.01 s for Dx and Dy, because its loops run in compiled code instead of Python.
+    The four-loop version does one Python-level multiply-add per kernel entry per pixel, about 100 million of them for the 9&times;9 box filter, so its time grows with the kernel: 26 s for the box filter against about 1 s for the two-entry Dx and Dy. The two-loop version makes a handful of NumPy calls per pixel instead, so its time barely depends on the kernel, about 2.5 s for all three. That makes it roughly 10 times faster for the box filter, but about 2.5 times slower for Dx and Dy, where the four-loop version only has two products to add and NumPy's per-call overhead costs more than it saves. <code>scipy</code> is much faster than either: 0.084 s for the box filter, about 30 times faster than the two-loop version and 300 times faster than the four-loop one, and about 0.01 s for Dx and Dy, because its loops run in compiled code instead of Python.
   </p>
 
   <h3>Boundary handling</h3>
@@ -191,16 +183,12 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
     difference of 6.3e-13 for the box filter and 0 for Dx and Dy). Zero padding only affects
     the outermost pixels: the box filter darkens the outer 4 pixels because it averages in
     zeros, and Dx and Dy pick up a one-pixel edge along the left and top border respectively.
-    <code>scipy</code> can also reflect or wrap at the border, but I only implemented zero fill.
+    <code>scipy</code> can also reflect or wrap at the border, but only zero fill is implemented here.
   </p>
 
   <h2 id="s2"><span class="secno">1.2</span> Finite difference operator</h2>
   <p class="setup">
-    I convolved the cameraman image with the finite difference operators from Part 1.1,
-    using my own four-loop convolution with "same" padding. Dx gives the partial derivative
-    Ix of the image I in x and Dy gives the partial derivative Iy in y. The gradient magnitude,
-    <code>sqrt(Ix&sup2; + Iy&sup2;)</code>, combines the two into a single edge-strength
-    image that doesn't depend on which way the edge points.
+    The cameraman image is convolved with the finite difference operators from Part 1.1, using the four-loop convolution with "same" padding. Dx gives the partial derivative Ix of the image <i>I</i> in x and Dy gives the partial derivative Iy in y. The gradient magnitude, <code>sqrt(Ix&sup2; + Iy&sup2;)</code>, combines the two into a single edge-strength image that doesn't depend on which way the edge points.
   </p>
 
   <div class="grid2">
@@ -224,8 +212,7 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
 
   <h3>Choosing a threshold</h3>
   <p class="setup">
-    To get a binary edge image I keep the pixels of the gradient magnitude above a threshold.
-    Figure 9 shows four choices.
+    A binary edge image keeps the pixels of the gradient magnitude above a threshold. Figure 9 shows four choices.
   </p>
 
   <div class="grid2">
@@ -239,7 +226,7 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
     </figure>
     <figure>
       <a href="media/cameraman_edges_45.png" target="_blank" rel="noopener"><img src="media/cameraman_edges_45.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 45: clean outline, camera, tripod and most of the horizon, with little speckle"></a>
-      <figcaption><b>Figure 9c.</b> Threshold 45 (3.8%), the one I chose.</figcaption>
+      <figcaption><b>Figure 9c.</b> Threshold 45 (3.8%), the one used.</figcaption>
     </figure>
     <figure>
       <a href="media/cameraman_edges_80.png" target="_blank" rel="noopener"><img src="media/cameraman_edges_80.png" width="534" height="534" loading="lazy" alt="Binary edge map at threshold 80: only the strongest edges remain and the camera detail and horizon are broken up"></a>
@@ -251,17 +238,14 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
     The threshold trades noise against real edges. At 15 the fine texture of the grass and a
     few specks in the sky are strong enough to pass, so noise crowds the real edges. At 80 the noise
     is gone, but so is a lot of true structure: the details of the camera and the skyline at
-    the horizon are broken up or missing. I chose 45. It removes most of the grass texture
-    while keeping the cameraman's outline, the camera, the tripod legs and most of the
+    the horizon are broken up or missing. Threshold 45 works best. It removes most of the grass texture while keeping the cameraman's outline, the camera, the tripod legs and most of the
     horizon.
   </p>
 
   <h2 id="s3"><span class="secno">1.3</span> Derivative of Gaussian (DoG) filter</h2>
   <p class="setup">
     Finite differences amplify noise, which is why the edge maps in Part 1.2 pick up the
-    texture of the grass. Blurring first suppresses it. I built a 13&times;13 Gaussian with
-    &sigma;&nbsp;=&nbsp;2 as the outer product of the 1D kernel from
-    <code>cv2.getGaussianKernel</code> with itself,
+    texture of the grass. Blurring first suppresses it. The Gaussian here is 13&times;13 with &sigma;&nbsp;=&nbsp;2, built as the outer product of the 1D kernel from <code>cv2.getGaussianKernel</code> with itself,
   </p>
 
   <math display="block" class="eq" aria-label="G equals g times g transpose">
@@ -289,9 +273,7 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
   <p class="setup">
     Convolution is associative, so blurring the image and then taking a finite difference is
     the same as convolving the image once with the Gaussian already convolved with the
-    difference operator. I convolved the Gaussian with Dx and with Dy, using my own
-    convolution from Part 1.1 with "full" padding, to get the two derivative of Gaussian
-    (DoG) filters:
+    difference operator. Convolving the Gaussian with Dx and with Dy, using the convolution from Part 1.1 with "full" padding, gives the two derivative of Gaussian (DoG) filters:
   </p>
 
   <math display="block" class="eq" aria-label="DoG x equals G convolved with D x, and DoG y equals G convolved with D y">
@@ -330,8 +312,7 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
   <h3>Blurred against unblurred</h3>
   <p class="setup">
     Figure 12 compares the gradient magnitude and the binarized edges without blur (Part 1.2)
-    and with it. The blurred gradients are much weaker, with a maximum of 39.6 against 221, so
-    I used a lower threshold of 15 for them, chosen the same way as before, instead of 45.
+    and with it. The blurred gradients are much weaker, with a maximum of 39.6 against 221, so they use a lower threshold of 15, chosen the same way as before, instead of 45.
     The blur and the derivatives here mirror the image at the border instead of zero padding it,
     so the blur doesn't darken the edges and no fake frame appears.
   </p>
@@ -412,8 +393,7 @@ max_diff = max(np.abs(cimg - scimg).max(), np.abs(c2img - scimg).max())</code></
     so that <i>I</i>&nbsp;&lowast;&nbsp;&delta;&nbsp;=&nbsp;<i>I</i>. Convolution is linear, so blurring,
     subtracting and adding back collapse into one convolution with the kernel
     (1&nbsp;+&nbsp;&alpha;)&delta;&nbsp;&minus;&nbsp;&alpha;<i>G</i>. That kernel sums to 1, so the overall
-    brightness doesn't change. I build it once and convolve the image with it, mirroring the
-    border. It matches blurring, subtracting and adding back to within 7e-13.
+    brightness doesn't change. The kernel is built once and the image is convolved with it, mirroring the border. It matches blurring, subtracting and adding back to within 7e-13.
   </p>
 
 <pre class="code"><code>def unsharp_kernel(size, sigma, alpha):
@@ -429,9 +409,7 @@ def unsharp(image, kernel, sigma, alpha=1.0):
 
   <h3>taj.jpg</h3>
   <p class="setup">
-    I used a 5&times;5 Gaussian with &sigma;&nbsp;=&nbsp;1 and &alpha;&nbsp;=&nbsp;1. Figure 14c is the
-    high-frequency component, scaled up 4&times; and shifted to mid gray so that both the positive and
-    the negative detail show up.
+    This example uses a 5&times;5 Gaussian with &sigma;&nbsp;=&nbsp;1 and &alpha;&nbsp;=&nbsp;1. Figure 14c is the high-frequency component, scaled up 4&times; and shifted to mid gray so that both the positive and the negative detail show up.
   </p>
 
   <div class="grid4 wide">
@@ -481,9 +459,7 @@ def unsharp(image, kernel, sigma, alpha=1.0):
 
   <h3>Blur, then sharpen</h3>
   <p class="setup">
-    To see how much sharpening can win back, I blurred <code>taj.jpg</code> with a stronger 11&times;11
-    Gaussian (&sigma;&nbsp;=&nbsp;1.5), sharpened that with the same Gaussian, and compared the result
-    with the original by eye. I used &alpha;&nbsp;=&nbsp;2, which brought the edges back without visible halos.
+    To see how much sharpening can win back, <code>taj.jpg</code> is blurred with a stronger 11&times;11 Gaussian (&sigma;&nbsp;=&nbsp;1.5), sharpened with the same Gaussian, and compared with the original by eye. &alpha;&nbsp;=&nbsp;2 brings the edges back without visible halos.
   </p>
 
   <div class="grid3 wide">
@@ -512,8 +488,7 @@ def unsharp(image, kernel, sigma, alpha=1.0):
 
   <h3>Other images</h3>
   <p class="setup">
-    I ran the same procedure on two of my own photos, a plate of duck and fish in an aquarium, both
-    slightly out of focus.
+    The same procedure is applied to two other photos, a plate of duck and a shot of fish in an aquarium, both slightly out of focus.
   </p>
 
   <div class="grid2">
@@ -556,9 +531,7 @@ def unsharp(image, kernel, sigma, alpha=1.0):
   <p class="setup">
     A hybrid image (Oliva, Torralba and Schyns, SIGGRAPH 2006) mixes the high frequencies of one image with the
     low frequencies of another. Up close the eye picks up the fine detail, so you see the first image. From far
-    away that detail is too small to see, and only the low frequencies are left, so you see the second. I take the
-    high frequencies of <i>I</i><sub>1</sub> as the image minus its Gaussian blur, which is the same as convolving
-    it with an impulse minus a Gaussian, scale them by a gain <i>k</i>, and add the blur of <i>I</i><sub>2</sub>:
+    away that detail is too small to see, and only the low frequencies are left, so you see the second. The high frequencies of <i>I</i><sub>1</sub> are the image minus its Gaussian blur, which is the same as convolving it with an impulse minus a Gaussian. They are scaled by a gain <i>k</i> and added to the blur of <i>I</i><sub>2</sub>:
   </p>
 
   <math display="block" class="eq" aria-label="H equals k times the quantity I 1 minus I 1 convolved with G sigma 1, plus I 2 convolved with G sigma 2, which equals I 1 convolved with k times the quantity delta minus G sigma 1, plus I 2 convolved with G sigma 2">
@@ -579,8 +552,7 @@ def unsharp(image, kernel, sigma, alpha=1.0):
   <p class="setup">
     Here <i>G</i><sub>&sigma;</sub> is a Gaussian with standard deviation &sigma; pixels, &delta; is the unit impulse, and
     &sigma;<sub>1</sub> and &sigma;<sub>2</sub> set the two cutoff frequencies. The gain <i>k</i> sets how strong
-    the first image is next to the second: at <i>k</i>&nbsp;=&nbsp;1 the high frequencies are used as they are, and I
-    raise or lower it for a pair that needs the first or the second image to stand out more. The blur is done as two 1D passes,
+    the first image is next to the second: at <i>k</i>&nbsp;=&nbsp;1 the high frequencies are used as they are, and a pair that needs the first or the second image to stand out more gets a larger or smaller value. The blur is done as two 1D passes,
     because the &sigma; needed here would make a single 2D kernel slow.
   </p>
 
@@ -599,20 +571,12 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
 
   <h3>Aligning the images</h3>
   <p class="setup">
-    The two images have to line up, or the low-frequency image reads as a different thing behind the detail. I pick
-    two matching points on each image, and the course starter code translates, scales and rotates the first image so
-    that the two points land on top of each other. I picked the points by hand and stored them in the code instead of
-    clicking them: the top and bottom of each dessert, the eyes for the person and the cat and for the two dolls, and
-    two points along the railing for the gulls. Before any of this, I convert both images of every pair to grayscale,
-    so that the hybrid depends only on brightness and the two frequency bands don't fight over color. The alignment
-    pads and rotates in black borders, so I then crop both images to the largest rectangle that is real picture in both.
+    The two images have to line up, or the low-frequency image reads as a different thing behind the detail. Two matching points are picked on each image, and the course starter code translates, scales and rotates the first image so that the two points land on top of each other. The points were picked by hand and stored in the code instead of clicked: the top and bottom of each dessert, the eyes for the person and the cat and for the two dolls, and two points along the railing for the gulls. Both images of every pair are converted to grayscale first, so that the hybrid depends only on brightness and the two frequency bands don't fight over color. The alignment pads and rotates in black borders, so both images are then cropped to the largest rectangle that is real picture in both.
   </p>
 
   <h3>Dessert</h3>
   <p class="setup">
-    This is my favorite result, so it gets the whole process. The meringue tart supplies the high frequencies and the
-    red pastry the low ones. I gave the tart the high frequencies because its sharp meringue peaks read best drawn on
-    top. I aligned the two on the top of each dessert and the bottom of its gold base.
+    Figures 19 to 21 walk through every step of the dessert hybrid, the favorite of the set. The meringue tart supplies the high frequencies and the red pastry the low ones, because the tart's sharp meringue peaks read best drawn on top. The two are aligned on the top of each dessert and the bottom of its gold base.
   </p>
 
   <div class="grid2 compact">
@@ -741,27 +705,17 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
 
   <h3>Cutoff frequencies</h3>
   <p class="setup">
-    I tuned &sigma;<sub>1</sub> and &sigma;<sub>2</sub> separately for each pair, by making a hybrid for many
-    combinations and judging every one twice: at the size the slider starts at, for the near view, and shrunk to about a
-    fifth of that for the far view. A good hybrid needs both, and the two pull against each other. A large
-    &sigma;<sub>1</sub> lowers the high-pass cutoff, so more of the first image gets through and it is stronger up
-    close, but the extra mid-frequency detail is still visible after shrinking, so the first image also shows from far
-    away. A small &sigma;<sub>1</sub> keeps only the finest detail, which disappears when shrunk, but leaves less of the
-    first image to see up close. A larger &sigma;<sub>2</sub> removes more of the second image's detail from the near
-    view, but leaves less of it to see from afar. The gain <i>k</i> moves the balance between the two without changing
-    which frequencies each image contributes: a larger <i>k</i> makes the first image stronger up close, and a smaller
-    one lets the second stand out.
+    The two cutoffs were found by trying many combinations for each pair and judging the result twice, at the size the
+    slider starts at and again shrunk to a fraction of that. The first image should win up close and the second from
+    far away. A larger &sigma;<sub>1</sub> lets more of the first image through, and a larger &sigma;<sub>2</sub>
+    blurs the second more. The gain <i>k</i> shifts the balance between the two: a larger value strengthens the first
+    image and a smaller one lets the second stand out.
   </p>
   <p class="setup">
-    I first tuned these on the color images, and tuned them again after converting to grayscale, because without color
-    the far view has to work on brightness alone. The settings are in the table. The dessert and Derek and Nutmeg use
-    <i>k</i>&nbsp;=&nbsp;1, and the dessert takes a larger &sigma;<sub>1</sub> because its photos are bigger (862 px
-    tall against 686 for Derek). For the labubu I raised <i>k</i> to 2, because the two dolls look alike and I wanted
-    the purple doll's fur and face lines to stand out up close, and I widened the low-pass a little to
-    &sigma;<sub>2</sub>&nbsp;=&nbsp;18 to keep some of the far view. For the gull I lowered <i>k</i> to 0.65 so that the
-    soft white shape of the wings-spread gull, which is the low-frequency image, is easier to see from far away. A
-    Gaussian with standard deviation &sigma; pixels has a frequency response that falls to 61% at 1/(2&pi;&sigma;)
-    cycles per pixel, which I take as the cutoff.
+    The settings were tuned again after converting to grayscale, since the far view then has to work on brightness
+    alone. The dessert and Derek and Nutmeg use <i>k</i>&nbsp;=&nbsp;1. The labubu uses <i>k</i>&nbsp;=&nbsp;2, so that
+    the purple doll's fur and face lines stand out, and the gull uses <i>k</i>&nbsp;=&nbsp;0.65, so that the soft white
+    shape of the wings-spread gull is easier to see from far away.
   </p>
 
   <table class="data-table">
@@ -798,7 +752,7 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
   </div>
 
   <p class="setup">
-    Derek supplies the high frequencies and Nutmeg the low ones, and I aligned them on their eyes. Up close you see
+    Derek supplies the high frequencies and Nutmeg the low ones, and they are aligned on their eyes. Up close you see
     Derek's face drawn in fine lines, and from far away it turns into the cat.
   </p>
 
@@ -819,9 +773,7 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
 
   <p class="setup">
     The two dolls are held in almost the same pose, so aligning on their eyes lines up the faces. Up close you see the
-    purple doll's fur and face detail, and from far away it turns into the darker, brown one. Because the dolls look so
-    much alike, I doubled the gain on the purple doll's high frequencies so that its fur and the outlines of its face
-    stand out.
+    purple doll's fur and face detail, and from far away it turns into the darker, brown one. Because the dolls look so much alike, the purple doll's high frequencies get double the gain, so that its fur and the outlines of its face stand out.
   </p>
 
   <div class="grid3">
@@ -840,12 +792,7 @@ def hybrid_image(im1, im2, sigma1, sigma2, gain=1.0):
   </div>
 
   <p class="setup">
-    This one changes a gull's pose instead of swapping objects. I aligned the two photos on the railing, using two
-    points on the far edge of its top board in each, which turns the first photo about 7&deg; and shrinks the second to
-    about 79%. The gulls are in different places along the railing, so they don't land on top of each other: the standing
-    gull is drawn in fine outlines on the right, and the wings-spread one is a soft white shape on the left. I lowered
-    the gain on the standing gull's high frequencies to 0.65 so that white shape is easier to see, and from far away it
-    is what is left.
+    This one changes a gull's pose instead of swapping objects. The two photos are aligned on the railing, using two points on the far edge of its top board in each, which turns the first photo about 7&deg; and shrinks the second to about 79%. The gulls are in different places along the railing, so they don't land on top of each other: the standing gull is drawn in fine outlines on the right, and the wings-spread one is a soft white shape on the left. The standing gull's high frequencies have a gain of 0.65 so that the white shape is easier to see, and from far away it is what is left.
   </p>
 
 </main>
