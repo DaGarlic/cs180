@@ -470,11 +470,11 @@ def train_denoiser(model, optimizer, make_input, num_epochs: int, tag: str):
 add_noise = lambda images: images + noise_level * torch.randn_like(images)
 train_losses = train_denoiser(model, optimizer, add_noise, num_epochs, &quot;denoiser&quot;)
 torch.save(model.state_dict(), OUT / &quot;denoiser.pt&quot;)</code></pre>
-  <div class="grid3 wide">
-    <figure>
-      <a href="media/b_denoiser_loss.jpg" target="_blank" rel="noopener"><img src="media/b_denoiser_loss.jpg" width="960" height="360" loading="lazy" alt="Training loss of the denoiser"></a>
-      <figcaption><b>Figure 31.</b> Training loss, logged every step with a 100-step moving average.</figcaption>
-    </figure>
+      <figure class="montage">
+    <a href="media/b_denoiser_loss.jpg" target="_blank" rel="noopener"><img src="media/b_denoiser_loss.jpg" width="960" height="360" loading="lazy" alt="Training loss of the denoiser"></a>
+    <figcaption><b>Figure 31.</b> Thin line: the loss at every training step. Thick line: its 100-step moving average. Training loss, logged every step with a 100-step moving average.</figcaption>
+  </figure>
+  <div class="grid2">
     <figure>
       <a href="media/b_denoiser_epoch1.jpg" target="_blank" rel="noopener"><img src="media/b_denoiser_epoch1.jpg" width="1440" height="413" loading="lazy" alt="Denoiser results on test digits after epoch 1"></a>
       <figcaption><b>Figure 32.</b> Test digits after epoch 1 (rows: noisy input, output, clean).</figcaption>
@@ -500,11 +500,11 @@ torch.save(model.state_dict(), OUT / &quot;denoiser.pt&quot;)</code></pre>
     The same setup is retrained with the input replaced by pure noise <code>z = &epsilon;</code>, and the target is still a clean digit. The loss drops almost immediately and then stays flat, since the input holds no information about the digit. After both epoch 1 and epoch 5, every output is the same blurry, digit-like blob, whatever noise goes in.
   </p>
 
-  <div class="grid3 wide">
-    <figure>
-      <a href="media/b_pure_noise_loss.jpg" target="_blank" rel="noopener"><img src="media/b_pure_noise_loss.jpg" width="960" height="360" loading="lazy" alt="Training loss when denoising pure noise"></a>
-      <figcaption><b>Figure 35.</b> Training loss on pure noise.</figcaption>
-    </figure>
+      <figure class="montage">
+    <a href="media/b_pure_noise_loss.jpg" target="_blank" rel="noopener"><img src="media/b_pure_noise_loss.jpg" width="960" height="360" loading="lazy" alt="Training loss when denoising pure noise"></a>
+    <figcaption><b>Figure 35.</b> Thin line: the loss at every training step. Thick line: its 100-step moving average. Training loss on pure noise.</figcaption>
+  </figure>
+  <div class="grid2">
     <figure>
       <a href="media/b_pure_noise_epoch1.jpg" target="_blank" rel="noopener"><img src="media/b_pure_noise_epoch1.jpg" width="1440" height="413" loading="lazy" alt="Outputs after epoch 1 when denoising pure noise"></a>
       <figcaption><b>Figure 36.</b> After epoch 1 (rows: noise, output, clean digit).</figcaption>
@@ -628,12 +628,10 @@ def train_fm(fm: nn.Module, conditional: bool, lr: float, use_scheduler: bool, s
 time_fm = TimeConditionalFM(TimeConditionalUNet(1, 10, FM_HIDDEN)).to(device)
 time_losses, time_samples = train_fm(time_fm, False, FM_LR, True, lambda fm: fm.sample((28, 28), seed=0), &quot;time_fm&quot;)
 loss_plot(time_losses, &quot;time_fm&quot;)</code></pre>
-  <div class="grid2 compact">
-    <figure>
-      <a href="media/b_time_fm_loss.jpg" target="_blank" rel="noopener"><img src="media/b_time_fm_loss.jpg" width="960" height="360" loading="lazy" alt="Training loss of the time-conditioned flow matching model"></a>
-      <figcaption><b>Figure 39.</b> Training loss of the time-conditioned model.</figcaption>
-    </figure>
-  </div>
+      <figure class="montage">
+    <a href="media/b_time_fm_loss.jpg" target="_blank" rel="noopener"><img src="media/b_time_fm_loss.jpg" width="960" height="360" loading="lazy" alt="Training loss of the time-conditioned flow matching model"></a>
+    <figcaption><b>Figure 39.</b> Thin line: the loss at every training step. Thick line: its 100-step moving average. Training loss of the time-conditioned model.</figcaption>
+  </figure>
   <h3><span class="secno">2.3</span> Sampling</h3>
   <p class="setup">
     Sampling takes 50 Euler steps with step size 1/50 from <i>t</i>&nbsp;=&nbsp;0 to 1. Figures 40 to 42 show 40 samples after epochs 1, 5 and 10 from the same noise. After epoch 1 the samples are mostly scribbles with a few digit-like strokes. By epoch 10 most look like handwritten digits, though several are malformed or ambiguous. The model has no way to choose a digit, so each sample is a draw from the whole dataset, and it is far less reliable than the class-conditioned model.
@@ -750,12 +748,10 @@ def time_fm_sample(unet: TimeConditionalUNet, img_wh: tuple[int, int], num_ts: i
     Training matches Section 2.2 and also draws the class labels. Figure 43 shows the loss.
   </p>
 
-  <div class="grid2 compact">
-    <figure>
-      <a href="media/b_class_fm_loss.jpg" target="_blank" rel="noopener"><img src="media/b_class_fm_loss.jpg" width="960" height="360" loading="lazy" alt="Training loss of the class-conditioned flow matching model"></a>
-      <figcaption><b>Figure 43.</b> Training loss of the class-conditioned model.</figcaption>
-    </figure>
-  </div>
+      <figure class="montage">
+    <a href="media/b_class_fm_loss.jpg" target="_blank" rel="noopener"><img src="media/b_class_fm_loss.jpg" width="960" height="360" loading="lazy" alt="Training loss of the class-conditioned flow matching model"></a>
+    <figcaption><b>Figure 43.</b> Thin line: the loss at every training step. Thick line: its 100-step moving average. Training loss of the class-conditioned model.</figcaption>
+  </figure>
   <h3><span class="secno">2.6</span> Sampling with classifier-free guidance</h3>
   <p class="setup">
     Sampling uses 300 Euler steps and guidance scale &gamma;&nbsp;=&nbsp;5, with <code>u = u_uncond + &gamma; &middot; (u_cond &minus; u_uncond)</code>. This is a different convention from Part A, where the guided velocity is <code>v_c + w &middot; (v_c &minus; v_u)</code>, so <i>w</i> there corresponds to &gamma;&nbsp;&minus;&nbsp;1 here. Each figure shows four instances of every digit, one row per instance. After epoch 1 the digits are already recognizable but have broken strokes and noisy backgrounds (the 4, 5 and 9 are the worst). By epoch 5 they are mostly clean, and by epoch 10 every sample is a clean, correctly labeled digit with a different handwriting style per row.
@@ -810,12 +806,10 @@ def class_fm_sample(unet: ClassConditionalUNet, c: torch.Tensor, img_wh: tuple[i
     For the ablation the scheduler is removed and the model is trained again for 10 epochs from the same seed. A constant rate has to serve both the early phase, where big steps help, and the late phase, where they add noise. To compensate, the constant rate was lowered to 1e-3, the value the scheduled run decays to. A constant 1e-2 was not tried. At 1e-3 the final samples are as clean and correctly labeled as the scheduled run's, with no difference visible by eye, and the loss curve is similar. On MNIST the scheduler therefore costs nothing but is not required if the rate is chosen sensibly. The risk of dropping it is that the start rate must be picked carefully, since there is no decay to recover from a rate that is too large.
   </p>
 
-  <div class="grid2 compact">
-    <figure>
-      <a href="media/b_class_fm_no_sched_loss.jpg" target="_blank" rel="noopener"><img src="media/b_class_fm_no_sched_loss.jpg" width="960" height="360" loading="lazy" alt="Training loss of the class-conditioned model with a constant learning rate"></a>
-      <figcaption><b>Figure 47.</b> Training loss with a constant learning rate of 1e-3.</figcaption>
-    </figure>
-  </div>
+      <figure class="montage">
+    <a href="media/b_class_fm_no_sched_loss.jpg" target="_blank" rel="noopener"><img src="media/b_class_fm_no_sched_loss.jpg" width="960" height="360" loading="lazy" alt="Training loss of the class-conditioned model with a constant learning rate"></a>
+    <figcaption><b>Figure 47.</b> Thin line: the loss at every training step. Thick line: its 100-step moving average. Training loss with a constant learning rate of 1e-3.</figcaption>
+  </figure>
       <figure class="montage">
     <a href="media/b_class_fm_no_sched_samples_epoch1.jpg" target="_blank" rel="noopener"><img src="media/b_class_fm_no_sched_samples_epoch1.jpg" width="1440" height="552" loading="lazy" alt="No-scheduler samples after epoch 1"></a>
     <figcaption><b>Figure 48.</b> No scheduler, epoch 1.</figcaption>
