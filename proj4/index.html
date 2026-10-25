@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project 4: [Auto]Stitching Photo Mosaics</title>
+<meta name="description" content="CS180 Project 4: homographies, projective warping and rectification, and blending photos into mosaics.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="editorial.css">
+</head>
+<body>
+<nav class="topnav" aria-label="Sections">
+  <div class="topnav-in">
+    <a class="home" href="../">CS180</a>
+    <a href="#a1"><span class="no">A 1</span> Photos</a>
+    <a href="#a2"><span class="no">A 2</span> Homographies</a>
+    <a href="#a3"><span class="no">A 3</span> Warping</a>
+    <a href="#a4"><span class="no">A 4</span> Mosaics</a>
+  </div>
+</nav>
+<main class="doc">
+
+  <h1>[Auto]Stitching Photo Mosaics</h1>
+  <p class="sub">Project 4 &middot; Ariq Koh &middot; CS180, Fall 2026 &middot; homographies, warping and blending photos into mosaics</p>
+
+  <h2 id="a1"><span class="secno">A1</span> Shooting the pictures</h2>
+  <p class="setup">
+    Three sets were shot from one spot, turning the camera between frames so neighboring photos differ by a projective transform, with roughly 50 to 60 percent overlap. The lounge and plaza pans have six photos each, but only four of each are used: the outermost photos look at the walls so obliquely that a flat projection stretches them into wedges, and all six lounge photos gave a canvas of 11778&times;8692 pixels.
+  </p>
+<figure class="montage">
+      <a href="media/mosaic_lounge_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_lounge_sources.jpg" width="1236" height="400" loading="lazy" alt="The four lounge photos used, from left to right"></a>
+      <figcaption><b>Figure 1.</b> The study lounge, IMG_1505 to IMG_1508. The window, the poster and the cubicle lamps are shared between neighbors.</figcaption>
+    </figure>
+<figure class="montage">
+      <a href="media/mosaic_toy_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_toy_sources.jpg" width="1548" height="400" loading="lazy" alt="The five toy store photos, from left to right"></a>
+      <figcaption><b>Figure 2.</b> The toy store, IMG_1527 to IMG_1531. Shelves, the giraffe board, the plush cart and the window poster carry the overlaps.</figcaption>
+    </figure>
+<figure class="montage">
+      <a href="media/mosaic_plaza_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_plaza_sources.jpg" width="1236" height="400" loading="lazy" alt="The four plaza photos used, from left to right"></a>
+      <figcaption><b>Figure 3.</b> The plaza at dusk, IMG_1563 to IMG_1566. The path, the distant building and the lamp post carry the overlaps.</figcaption>
+    </figure>
+
+  <h2 id="a2"><span class="secno">A2</span> Recovering homographies</h2>
+  <p class="setup">
+    A homography maps a point <i>p</i>&nbsp;=&nbsp;(<i>x</i>,&nbsp;<i>y</i>) of one photo to <i>p&prime;</i>&nbsp;=&nbsp;(<i>x&prime;</i>,&nbsp;<i>y&prime;</i>) of the other through a 3&times;3 matrix <i>H</i> with eight degrees of freedom, since the bottom right entry is fixed to 1 and the result is divided by the third coordinate. Multiplying that division out gives two equations per correspondence that are linear in the eight unknowns:
+  </p>
+
+  <math display="block" class="eq" aria-label="x prime equals a x plus b y plus c minus g x x prime minus h y x prime, and y prime equals d x plus e y plus f minus g x y prime minus h y y prime">
+    <mrow>
+      <mi>x&prime;</mi><mo>=</mo><mi>a</mi><mi>x</mi><mo>+</mo><mi>b</mi><mi>y</mi><mo>+</mo><mi>c</mi><mo>&minus;</mo><mi>g</mi><mi>x</mi><mi>x&prime;</mi><mo>&minus;</mo><mi>h</mi><mi>y</mi><mi>x&prime;</mi>
+    </mrow>
+  </math>
+  <math display="block" class="eq" aria-label="y prime equals d x plus e y plus f minus g x y prime minus h y y prime">
+    <mrow>
+      <mi>y&prime;</mi><mo>=</mo><mi>d</mi><mi>x</mi><mo>+</mo><mi>e</mi><mi>y</mi><mo>+</mo><mi>f</mi><mo>&minus;</mo><mi>g</mi><mi>x</mi><mi>y&prime;</mi><mo>&minus;</mo><mi>h</mi><mi>y</mi><mi>y&prime;</mi>
+    </mrow>
+  </math>
+
+  <p class="setup">
+    Stacking the two rows of every correspondence gives <i>A h</i>&nbsp;=&nbsp;<i>b</i> with <i>A</i> of size 2<i>n</i>&times;8. Four points solve it exactly, but a few pixels of click error then move <i>H</i> a lot, so 12 points per pair are clicked and the overdetermined system is solved by least squares (<code>np.linalg.lstsq</code>). The points were picked by hand with <code>matplotlib</code>'s <code>ginput</code> on the two photos side by side, favoring window and furniture corners, signs and other sharp features spread across the whole overlap.
+  </p>
+
+<pre class="code"><code>def build_system(im1_pts, im2_pts):
+    # Stack the linear system A h = b for the 8 unknowns h = (a, b, c, d, e, f, g, h) of H, with H[2, 2] fixed to 1.
+    # Every correspondence (x, y) -&gt; (x', y') gives two rows:
+    #   x' = a x + b y + c - g x x' - h y x'
+    #   y' = d x + e y + f - g x y' - h y y'
+    pts1 = np.array(im1_pts, dtype=float)
+    pts2 = np.array(im2_pts, dtype=float)
+    n = len(pts1)
+    A = np.zeros((2 * n, 8))
+    b = np.zeros(2 * n)
+    x, y = pts1[:, 0], pts1[:, 1]
+    xp, yp = pts2[:, 0], pts2[:, 1]
+    A[0::2, 0], A[0::2, 1], A[0::2, 2] = x, y, 1
+    A[0::2, 6], A[0::2, 7] = -x * xp, -y * xp
+    A[1::2, 3], A[1::2, 4], A[1::2, 5] = x, y, 1
+    A[1::2, 6], A[1::2, 7] = -x * yp, -y * yp
+    b[0::2], b[1::2] = xp, yp
+    return A, b
+
+def computeH(im1_pts, im2_pts):
+    # Homography H with im2_pts ~ H im1_pts. Both inputs are n x 2 arrays of (x, y). Four points solve the system exactly
+    # but a few pixels of click error move H a lot, so use more and solve the overdetermined system by least squares
+    if len(im1_pts) != len(im2_pts) or len(im1_pts) &lt; 4:
+        raise ValueError("computeH needs the same number of points in both images, and at least 4")
+    A, b = build_system(im1_pts, im2_pts)
+    h = np.linalg.lstsq(A, b, rcond=None)[0]
+    return np.append(h, 1).reshape(3, 3)</code></pre>
+
+  <p class="setup">
+    The complete 24&times;8 system for each set's first pair is linked under its correspondences below. The recovered homography of the first toy store pair, from IMG_1527 to IMG_1528, is:
+  </p>
+
+  <math display="block" class="eq" aria-label="H for the toy store pair 1527 to 1528">
+    <mrow>
+      <mi>H</mi><mo>=</mo>
+      <mrow><mo>[</mo><mtable>
+        <mtr><mtd><mn>1.36214</mn></mtd><mtd><mn>0.04219</mn></mtd><mtd><mn>&minus;647.25705</mn></mtd></mtr>
+        <mtr><mtd><mn>0.19063</mn></mtd><mtd><mn>1.23839</mn></mtd><mtd><mn>&minus;196.06490</mn></mtd></mtr>
+        <mtr><mtd><mn>0.00023</mn></mtd><mtd><mn>0.00001</mn></mtd><mtd><mn>1</mn></mtd></mtr>
+      </mtable><mo>]</mo></mrow>
+    </mrow>
+  </math>
+
+  <p class="setup">
+    The correspondences of the first pair of each set are drawn below, numbered in the order they were clicked.
+  </p>
+<figure class="montage">
+      <a href="media/corr_lounge_1505_1506.jpg" target="_blank" rel="noopener"><img src="media/corr_lounge_1505_1506.jpg" width="1500" height="1000" loading="lazy" alt="Twelve numbered correspondences between lounge photos 1505 and 1506"></a>
+      <figcaption><b>Figure 4.</b> Lounge, IMG_1505 and IMG_1506. <a href="media/system_lounge_1505_1506.txt" target="_blank" rel="noopener">The system of equations</a>.</figcaption>
+    </figure>
+<figure class="montage">
+      <a href="media/corr_toy_1527_1528.jpg" target="_blank" rel="noopener"><img src="media/corr_toy_1527_1528.jpg" width="1500" height="1000" loading="lazy" alt="Twelve numbered correspondences between toy store photos 1527 and 1528"></a>
+      <figcaption><b>Figure 5.</b> Toy store, IMG_1527 and IMG_1528. <a href="media/system_toy_1527_1528.txt" target="_blank" rel="noopener">The system of equations</a>.</figcaption>
+    </figure>
+<figure class="montage">
+      <a href="media/corr_plaza_1563_1564.jpg" target="_blank" rel="noopener"><img src="media/corr_plaza_1563_1564.jpg" width="1500" height="1000" loading="lazy" alt="Twelve numbered correspondences between plaza photos 1563 and 1564"></a>
+      <figcaption><b>Figure 6.</b> Plaza, IMG_1563 and IMG_1564. <a href="media/system_plaza_1563_1564.txt" target="_blank" rel="noopener">The system of equations</a>.</figcaption>
+    </figure>
+
+
+  <h2 id="a3"><span class="secno">A3</span> Warping and rectification</h2>
+  <p class="setup">
+    The warps use inverse warping: the bounding box of the output is found by pushing the four corners of the photo through <i>H</i>, and every output pixel is then sent back through <i>H</i><sup>&minus;1</sup> to find where in the photo it comes from. Every output pixel gets a value this way, so there are no holes. Pixels whose source lies outside the photo are marked in an alpha mask. Both interpolation methods are written with <code>numpy</code> only. Nearest neighbor rounds the source position to the closest pixel, and bilinear takes a weighted average of the four pixels around it, each weighted by how close the position is to it. Both return the warped image, the alpha mask and the position of the output's top left corner.
+  </p>
+
+<pre class="code"><code>def warpImageNearestNeighbor(im, H, bbox=None):
+    # Inverse warp with nearest neighbor: round the source position to the closest pixel. Pixel (0, 0) is the center of
+    # the first pixel. Returns the warped image, an alpha mask (1 where the output pixel came from inside im) and the
+    # (x, y) of the output's top left corner in the target frame
+    height, width = im.shape[:2]
+    bbox = bbox or output_bbox(im.shape, H)
+    src_x, src_y = inverse_coords(H, bbox)
+    col, row = np.round(src_x).astype(int), np.round(src_y).astype(int)
+    alpha = (col &gt;= 0) &amp; (col &lt; width) &amp; (row &gt;= 0) &amp; (row &lt; height)
+    warped = np.zeros(src_x.shape + im.shape[2:], dtype=im.dtype)
+    warped[alpha] = im[row[alpha], col[alpha]]
+    return warped, alpha.astype(float), (bbox[0], bbox[1])
+
+def warpImageBilinear(im, H, bbox=None):
+    # Inverse warp with bilinear interpolation: a weighted average of the four pixels around the source position,
+    # where each is weighted by how close the position is to it. Returns the same three things as the nearest neighbor warp
+    height, width = im.shape[:2]
+    bbox = bbox or output_bbox(im.shape, H)
+    src_x, src_y = inverse_coords(H, bbox)
+    alpha = (src_x &gt;= 0) &amp; (src_x &lt;= width - 1) &amp; (src_y &gt;= 0) &amp; (src_y &lt;= height - 1)
+    x, y = src_x[alpha], src_y[alpha]
+
+    # Top left of the four neighbors (kept one short of the last row and column so the other three exist)
+    col = np.minimum(np.floor(x).astype(int), width - 2)
+    row = np.minimum(np.floor(y).astype(int), height - 2)
+    dx, dy = x - col, y - row
+    if im.ndim == 3:
+        dx, dy = dx[:, np.newaxis], dy[:, np.newaxis]
+    im = im.astype(float)
+    values = ((1 - dx) * (1 - dy) * im[row, col] + dx * (1 - dy) * im[row, col + 1]
+              + (1 - dx) * dy * im[row + 1, col] + dx * dy * im[row + 1, col + 1])
+    warped = np.zeros(src_x.shape + im.shape[2:])
+    warped[alpha] = values
+    return np.clip(np.round(warped), 0, 255).astype(np.uint8), alpha.astype(float), (bbox[0], bbox[1])</code></pre>
+
+  <p class="setup">
+    To test them alone, two planar objects were photographed at an angle and rectified: the four corners of the door and of the window pane were clicked, and <i>H</i> sends them to the corners of an upright rectangle. The rectangle's proportions were chosen to match a door (500&times;1100) and the window (560&times;800), without measuring the real objects. The corners were clicked in different orders for the two photos, so they are sorted into top left, top right, bottom right and bottom left before solving.
+  </p>
+
+  <h3><span class="secno">3.1</span> Door</h3>
+  <div class="grid3 wide">
+    <figure>
+      <a href="media/rect_door_input.jpg" target="_blank" rel="noopener"><img src="media/rect_door_input.jpg" width="750" height="1000" loading="lazy" alt="The door photo with the clicked corners outlined in red"></a>
+      <figcaption><b>Figure 7.</b> IMG_1510 with the clicked corners outlined.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/rect_door_nearest.jpg" target="_blank" rel="noopener"><img src="media/rect_door_nearest.jpg" width="500" height="1100" loading="lazy" alt="The door rectified with nearest neighbor"></a>
+      <figcaption><b>Figure 8.</b> Rectified, nearest neighbor.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/rect_door_bilinear.jpg" target="_blank" rel="noopener"><img src="media/rect_door_bilinear.jpg" width="500" height="1100" loading="lazy" alt="The door rectified with bilinear interpolation"></a>
+      <figcaption><b>Figure 9.</b> Rectified, bilinear.</figcaption>
+    </figure>
+  </div>
+<figure class="montage">
+      <a href="media/rect_door_zoom.png" target="_blank" rel="noopener"><img src="media/rect_door_zoom.png" width="972" height="480" loading="lazy" alt="A zoomed patch of the rectified door, nearest neighbor on the left and bilinear on the right"></a>
+      <figcaption><b>Figure 10.</b> A 60&times;60 pixel patch of the glass panel, enlarged 8&times;. Nearest neighbor on the left, bilinear on the right.</figcaption>
+    </figure>
+
+  <h3><span class="secno">3.2</span> Window</h3>
+  <div class="grid3 wide">
+    <figure>
+      <a href="media/rect_window_input.jpg" target="_blank" rel="noopener"><img src="media/rect_window_input.jpg" width="750" height="1000" loading="lazy" alt="The window photo with the clicked corners outlined in red"></a>
+      <figcaption><b>Figure 11.</b> IMG_1509 with the clicked corners outlined.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/rect_window_nearest.jpg" target="_blank" rel="noopener"><img src="media/rect_window_nearest.jpg" width="560" height="800" loading="lazy" alt="The window rectified with nearest neighbor"></a>
+      <figcaption><b>Figure 12.</b> Rectified, nearest neighbor.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/rect_window_bilinear.jpg" target="_blank" rel="noopener"><img src="media/rect_window_bilinear.jpg" width="560" height="800" loading="lazy" alt="The window rectified with bilinear interpolation"></a>
+      <figcaption><b>Figure 13.</b> Rectified, bilinear.</figcaption>
+    </figure>
+  </div>
+<figure class="montage">
+      <a href="media/rect_window_zoom.png" target="_blank" rel="noopener"><img src="media/rect_window_zoom.png" width="972" height="480" loading="lazy" alt="A zoomed patch of the rectified window, nearest neighbor on the left and bilinear on the right"></a>
+      <figcaption><b>Figure 14.</b> A 60&times;60 pixel patch of the roof tiles and the wall below them in the rectified window, enlarged 8&times;. Nearest neighbor on the left, bilinear on the right.</figcaption>
+    </figure>
+
+  <p class="setup">
+    Both objects come out as upright rectangles. The door's frame, hinges and the edges of the glass panel are straight and parallel, and the window frame and the horizontal slats of the blind are level. In the enlarged patches nearest neighbor leaves stair-stepped edges, visible along the dark frame and the diagonal wire pattern of the door's glass and in the jagged tile edges of the window, because each output pixel copies a single source pixel. Bilinear gives smooth edges and a continuous pattern, at the price of slightly softer detail. On the 1500&times;2000 photos the timings of one run were:
+  </p>
+  <table class="data-table runtime">
+    <thead><tr><th>Object</th><th>Output</th><th>Nearest neighbor</th><th>Bilinear</th></tr></thead>
+    <tbody>
+      <tr><td>Door</td><td>500&times;1100</td><td class="num">0.042 s</td><td class="num">0.122 s</td></tr>
+      <tr><td>Window</td><td>560&times;800</td><td class="num">0.031 s</td><td class="num">0.105 s</td></tr>
+    </tbody>
+  </table>
+  <p class="setup">
+    Bilinear takes about three times as long, since it reads four pixels and mixes them per output pixel instead of one. The extra cost is small in absolute terms, and the mosaics below use bilinear throughout.
+  </p>
+
+  <h2 id="a4"><span class="secno">A4</span> Blending into mosaics</h2>
+  <p class="setup">
+    One photo near the middle of each set is left unwarped and the others are warped into its frame. Homographies are recovered for neighboring pairs only and multiplied together, so a photo farther from the reference uses the product of several pairs, and photos on the other side use the inverses. The bounding boxes of all the warped photos give one canvas, and every photo is warped onto it with bilinear interpolation. The mosaics are built from 750&times;1000 copies of the photos.
+  </p>
+  <p class="setup">
+    Overwriting leaves hard edges wherever exposure differs between photos, so the photos are blended with weights. Every pixel of a warped photo is weighted by its distance to the photo's nearest empty pixel, so a photo counts most at its center and fades to zero at its border. Each pixel is given to the photo with the largest weight, and that mask is blurred with a Gaussian that doubles in width at every level (four levels, &sigma;&nbsp;=&nbsp;8, 16 and 32). Each frequency band of the photos is mixed with the mask of its own level. Low frequencies, which carry exposure and color, are mixed across a wide seam, and high frequencies, which carry edges, across a narrow one. This hides the seams without double images.
+  </p>
+
+  <h3><span class="secno">4.1</span> Lounge</h3>
+  <p class="setup">
+    IMG_1506 is the reference, with IMG_1505 on its left and IMG_1507 and IMG_1508 on its right.
+  </p>
+<figure class="montage">
+      <a href="media/mosaic_lounge_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_lounge_sources.jpg" width="1236" height="400" loading="lazy" alt="The source photos of the lounge mosaic"></a>
+      <figcaption><b>Figure 15.</b> Source photos of the lounge mosaic.</figcaption>
+    </figure>
+<figure class="montage">
+      <a href="media/mosaic_lounge_laplacian.jpg" target="_blank" rel="noopener"><img src="media/mosaic_lounge_laplacian.jpg" width="2137" height="1884" loading="lazy" alt="The lounge mosaic"></a>
+      <figcaption><b>Figure 16.</b> The lounge mosaic, 2137&times;1884.</figcaption>
+    </figure>
+
+  <h3><span class="secno">4.2</span> Toy store</h3>
+  <p class="setup">
+    IMG_1529 is the reference, with two photos on each side.
+  </p>
+<figure class="montage">
+      <a href="media/mosaic_toy_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_toy_sources.jpg" width="1548" height="400" loading="lazy" alt="The source photos of the toy store mosaic"></a>
+      <figcaption><b>Figure 17.</b> Source photos of the toy store mosaic.</figcaption>
+    </figure>
+<figure class="montage">
+      <a href="media/mosaic_toy_laplacian.jpg" target="_blank" rel="noopener"><img src="media/mosaic_toy_laplacian.jpg" width="2068" height="1610" loading="lazy" alt="The toy store mosaic"></a>
+      <figcaption><b>Figure 18.</b> The toy store mosaic, 2068&times;1610.</figcaption>
+    </figure>
+
+  <h3><span class="secno">4.3</span> Plaza</h3>
+  <p class="setup">
+    IMG_1564 is the reference, with IMG_1563 on its left and IMG_1565 and IMG_1566 on its right.
+  </p>
+<figure class="montage">
+      <a href="media/mosaic_plaza_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_plaza_sources.jpg" width="1236" height="400" loading="lazy" alt="The source photos of the plaza mosaic"></a>
+      <figcaption><b>Figure 19.</b> Source photos of the plaza mosaic.</figcaption>
+    </figure>
+<figure class="montage">
+      <a href="media/mosaic_plaza_laplacian.jpg" target="_blank" rel="noopener"><img src="media/mosaic_plaza_laplacian.jpg" width="2562" height="2189" loading="lazy" alt="The plaza mosaic"></a>
+      <figcaption><b>Figure 20.</b> The plaza mosaic, 2562&times;2189.</figcaption>
+    </figure>
+
+
+</main>
+<script>
+(function () {
+  // side navigation: highlight the section being read
+  var links = document.querySelectorAll('.topnav a[href^="#"]');
+  var heads = [];
+  links.forEach(function (a) {
+    var h = document.getElementById(a.getAttribute('href').slice(1));
+    if (h) heads.push({ a: a, h: h });
+  });
+  function spy() {
+    var line = window.scrollY + window.innerHeight * 0.3, current = null;
+    heads.forEach(function (x) { if (x.h.getBoundingClientRect().top + window.scrollY <= line) current = x.a; });
+    links.forEach(function (a) { a.classList.toggle('active', a === current); });
+  }
+  window.addEventListener('scroll', spy, { passive: true });
+  window.addEventListener('resize', spy);
+  spy();
+
+})();
+</script>
+</body>
+</html>

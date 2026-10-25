@@ -1,0 +1,6 @@
+output/
+support/
+images/*.heic
+images/*.HEIC
+images/original/
+submission/
