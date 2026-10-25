@@ -31,15 +31,15 @@
     Three sets were shot from one spot, turning the camera between frames so neighboring photos differ by a projective transform, with roughly 50 to 60 percent overlap. The lounge and plaza pans have six photos each, but only four of each are used: the outermost photos look at the walls so obliquely that a flat projection stretches them into wedges, and all six lounge photos gave a canvas of 11778&times;8692 pixels.
   </p>
 <figure class="montage">
-      <a href="media/mosaic_lounge_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_lounge_sources.jpg" width="1236" height="400" loading="lazy" alt="The four lounge photos used, from left to right"></a>
+      <a href="media/mosaic_lounge_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_lounge_sources.jpg" width="1236" height="444" loading="lazy" alt="The four lounge photos used, from left to right"></a>
       <figcaption><b>Figure 1.</b> The study lounge, IMG_1505 to IMG_1508. The window, the poster and the cubicle lamps are shared between neighbors.</figcaption>
     </figure>
 <figure class="montage">
-      <a href="media/mosaic_toy_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_toy_sources.jpg" width="1548" height="400" loading="lazy" alt="The five toy store photos, from left to right"></a>
+      <a href="media/mosaic_toy_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_toy_sources.jpg" width="1548" height="444" loading="lazy" alt="The five toy store photos, from left to right"></a>
       <figcaption><b>Figure 2.</b> The toy store, IMG_1527 to IMG_1531. Shelves, the giraffe board, the plush cart and the window poster carry the overlaps.</figcaption>
     </figure>
 <figure class="montage">
-      <a href="media/mosaic_plaza_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_plaza_sources.jpg" width="1236" height="400" loading="lazy" alt="The four plaza photos used, from left to right"></a>
+      <a href="media/mosaic_plaza_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_plaza_sources.jpg" width="1236" height="444" loading="lazy" alt="The four plaza photos used, from left to right"></a>
       <figcaption><b>Figure 3.</b> The plaza at dusk, IMG_1563 to IMG_1566. The path, the distant building and the lamp post carry the overlaps.</figcaption>
     </figure>
 
@@ -164,7 +164,7 @@ def warpImageBilinear(im, H, bbox=None):
     return np.clip(np.round(warped), 0, 255).astype(np.uint8), alpha.astype(float), (bbox[0], bbox[1])</code></pre>
 
   <p class="setup">
-    To test them alone, two planar objects were photographed at an angle and rectified: the four corners of the door and of the window pane were clicked, and <i>H</i> sends them to the corners of an upright rectangle. The rectangle's proportions were chosen to match a door (500&times;1100) and the window (560&times;800), without measuring the real objects. The corners were clicked in different orders for the two photos, so they are sorted into top left, top right, bottom right and bottom left before solving.
+    To test them alone, two planar objects were photographed at an angle and rectified: the four corners of the door and of the window pane were clicked, and <i>H</i> sends them to the corners of an upright rectangle. The rectangle's proportions were chosen to match a door (500&times;1100) and the window (560&times;800), without measuring the real objects.
   </p>
 
   <h3><span class="secno">3.1</span> Door</h3>
@@ -234,8 +234,8 @@ def warpImageBilinear(im, H, bbox=None):
     IMG_1506 is the reference, with IMG_1505 on its left and IMG_1507 and IMG_1508 on its right.
   </p>
 <figure class="montage">
-      <a href="media/mosaic_lounge_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_lounge_sources.jpg" width="1236" height="400" loading="lazy" alt="The source photos of the lounge mosaic"></a>
-      <figcaption><b>Figure 15.</b> Source photos of the lounge mosaic.</figcaption>
+      <a href="media/mosaic_lounge_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_lounge_sources.jpg" width="1236" height="444" loading="lazy" alt="The source photos of the lounge mosaic"></a>
+      <figcaption><b>Figure 15.</b> Source photos of the lounge mosaic, left to right. The reference photo is marked (ref).</figcaption>
     </figure>
 <figure class="montage">
       <a href="media/mosaic_lounge_laplacian.jpg" target="_blank" rel="noopener"><img src="media/mosaic_lounge_laplacian.jpg" width="2137" height="1884" loading="lazy" alt="The lounge mosaic"></a>
@@ -247,8 +247,8 @@ def warpImageBilinear(im, H, bbox=None):
     IMG_1529 is the reference, with two photos on each side.
   </p>
 <figure class="montage">
-      <a href="media/mosaic_toy_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_toy_sources.jpg" width="1548" height="400" loading="lazy" alt="The source photos of the toy store mosaic"></a>
-      <figcaption><b>Figure 17.</b> Source photos of the toy store mosaic.</figcaption>
+      <a href="media/mosaic_toy_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_toy_sources.jpg" width="1548" height="444" loading="lazy" alt="The source photos of the toy store mosaic"></a>
+      <figcaption><b>Figure 17.</b> Source photos of the toy store mosaic, left to right. The reference photo is marked (ref).</figcaption>
     </figure>
 <figure class="montage">
       <a href="media/mosaic_toy_laplacian.jpg" target="_blank" rel="noopener"><img src="media/mosaic_toy_laplacian.jpg" width="2068" height="1610" loading="lazy" alt="The toy store mosaic"></a>
@@ -260,8 +260,8 @@ def warpImageBilinear(im, H, bbox=None):
     IMG_1564 is the reference, with IMG_1563 on its left and IMG_1565 and IMG_1566 on its right.
   </p>
 <figure class="montage">
-      <a href="media/mosaic_plaza_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_plaza_sources.jpg" width="1236" height="400" loading="lazy" alt="The source photos of the plaza mosaic"></a>
-      <figcaption><b>Figure 19.</b> Source photos of the plaza mosaic.</figcaption>
+      <a href="media/mosaic_plaza_sources.jpg" target="_blank" rel="noopener"><img src="media/mosaic_plaza_sources.jpg" width="1236" height="444" loading="lazy" alt="The source photos of the plaza mosaic"></a>
+      <figcaption><b>Figure 19.</b> Source photos of the plaza mosaic, left to right. The reference photo is marked (ref).</figcaption>
     </figure>
 <figure class="montage">
       <a href="media/mosaic_plaza_laplacian.jpg" target="_blank" rel="noopener"><img src="media/mosaic_plaza_laplacian.jpg" width="2562" height="2189" loading="lazy" alt="The plaza mosaic"></a>

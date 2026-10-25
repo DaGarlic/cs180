@@ -69,12 +69,21 @@ def draw_correspondences(im1, im2, pts1, pts2):
             cv2.putText(canvas, str(i + 1), (p[0] + 8, p[1] - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
     return canvas
 
-def montage_row(images, height=500, gap=12):
-    # The images in a row, all scaled to the same height, with a white gap between them
+def montage_row(images, height=500, gap=12, labels=None):
+    # The images in a row, all scaled to the same height, with a white gap between them. With labels, every image gets its
+    # label centered in a white strip below it
     resized = [cv2.resize(im, (round(im.shape[1] * height / im.shape[0]), height), interpolation=cv2.INTER_AREA) for im in images]
+    if labels:
+        strip = 44
+        for i, (im, label) in enumerate(zip(resized, labels)):
+            labeled = np.full((height + strip, im.shape[1], 3), 255, dtype=np.uint8)
+            labeled[:height] = im
+            (text_w, _), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)
+            cv2.putText(labeled, label, ((im.shape[1] - text_w) // 2, height + 31), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (40, 40, 40), 2, cv2.LINE_AA)
+            resized[i] = labeled
     pieces = []
     for im in resized:
-        pieces += [im, np.full((height, gap, 3), 255, dtype=np.uint8)]
+        pieces += [im, np.full((im.shape[0], gap, 3), 255, dtype=np.uint8)]
     return np.hstack(pieces[:-1])
 
 def run_partA2(path_to_img_folder, path_to_out_folder):
@@ -162,7 +171,7 @@ def run_partA4(path_to_img_folder, path_to_out_folder):
 
         layers = [warpImageBilinear(im, H, bbox) for im, H in zip(imgs, to_ref)]
         images, alphas, _ = place_on_canvas(layers)
-        save_img(os.path.join(path_to_out_folder, f"mosaic_{set_name}_sources.jpg"), montage_row(imgs, 400))
+        save_img(os.path.join(path_to_out_folder, f"mosaic_{set_name}_sources.jpg"), montage_row(imgs, 400, labels=[f"IMG_{n}" + (" (ref)" if k == reference else "") for k, n in enumerate(numbers)]))
         mosaic, t = timed(blend_laplacian, images, alphas)
         print(f"{set_name}: blend {t:.1f}s")
         save_img(os.path.join(path_to_out_folder, f"mosaic_{set_name}_laplacian.jpg"), mosaic)
