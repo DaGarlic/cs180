@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Project 4: [Auto]Stitching Photo Mosaics</title>
-<meta name="description" content="CS180 Project 4: homographies, projective warping and rectification, and blending photos into mosaics.">
+<meta name="description" content="CS180 Project 4: homographies, projective warping and rectification, and blending photos into mosaics from clicked points and from automatically matched features.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap">
@@ -19,12 +19,16 @@
     <a href="#a2"><span class="no">A 2</span> Homographies</a>
     <a href="#a3"><span class="no">A 3</span> Warping</a>
     <a href="#a4"><span class="no">A 4</span> Mosaics</a>
+    <a href="#b1"><span class="no">B 1</span> Corners</a>
+    <a href="#b2"><span class="no">B 2</span> Descriptors</a>
+    <a href="#b3"><span class="no">B 3</span> Matching</a>
+    <a href="#b4"><span class="no">B 4</span> RANSAC</a>
   </div>
 </nav>
 <main class="doc">
 
   <h1>[Auto]Stitching Photo Mosaics</h1>
-  <p class="sub">Project 4 &middot; Ariq Koh &middot; CS180, Fall 2026 &middot; homographies, warping and blending photos into mosaics</p>
+  <p class="sub">Project 4 &middot; Ariq Koh &middot; CS180, Fall 2026 &middot; homographies, warping, and blending photos into mosaics by hand and automatically</p>
 
   <h2 id="a1"><span class="secno">A1</span> Shooting the pictures</h2>
   <p class="setup">
@@ -268,6 +272,97 @@ def warpImageBilinear(im, H, bbox=None):
       <figcaption><b>Figure 20.</b> The plaza mosaic, 2562&times;2189.</figcaption>
     </figure>
 
+
+  <h2 id="b1"><span class="secno">B1</span> Harris corners and ANMS</h2>
+  <p class="setup">
+    Part B replaces the clicked points with automatic ones, following Brown et al., <i>Multi-Image Matching using Multi-Scale Oriented Patches</i>, with the simplifications of the assignment: one scale, no rotation invariance and no sub-pixel refinement. All of it runs on the same 750&times;1000 copies of the photos as the Part A mosaics.
+  </p>
+  <p class="setup">
+    The Harris detector gives every pixel a corner strength and keeps the local maxima, and corners within 20 pixels of the border are dropped so that each one has a full 40&times;40 window around it. That leaves about 20000 corners per photo, which is far more than can be matched and mostly clustered on the busiest texture. Adaptive non-maximal suppression thins them out by giving every corner a radius: the distance to the nearest corner that is clearly stronger, meaning one whose strength times 0.9 is still above its own. Keeping the corners with the largest radii leaves strong corners that are also spread apart. Since the radii need the distance between every pair of corners, only the 6000 strongest corners enter the suppression, and 3000 are kept.
+  </p>
+  <div class="grid3 wide">
+    <figure>
+      <a href="media/harris_lounge.jpg" target="_blank" rel="noopener"><img src="media/harris_lounge.jpg" width="750" height="1000" loading="lazy" alt="All Harris corners of IMG_1505"></a>
+      <figcaption><b>Figure 21.</b> All 20945 Harris corners of IMG_1505.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/strongest_lounge.jpg" target="_blank" rel="noopener"><img src="media/strongest_lounge.jpg" width="750" height="1000" loading="lazy" alt="The 3000 strongest Harris corners of IMG_1505"></a>
+      <figcaption><b>Figure 22.</b> The 3000 strongest corners by Harris strength alone.</figcaption>
+    </figure>
+    <figure>
+      <a href="media/anms_lounge.jpg" target="_blank" rel="noopener"><img src="media/anms_lounge.jpg" width="750" height="1000" loading="lazy" alt="The 3000 corners kept by ANMS in IMG_1505"></a>
+      <figcaption><b>Figure 23.</b> The 3000 corners kept by ANMS.</figcaption>
+    </figure>
+  </div>
+  <p class="setup">
+    The strongest corners alone pile up on the carpet and the window, and leave the walls and ceiling empty. ANMS keeps those crowded areas dense enough to match but also keeps corners along the ceiling edge, the wall corner and the light patch on the wall. Evenly spread corners matter for the homography, since a fit to points from one corner of the overlap is poorly constrained everywhere else.
+  </p>
+
+  <h2 id="b2"><span class="secno">B2</span> Feature descriptors</h2>
+  <p class="setup">
+    A single pixel around a corner is too noisy to match on, so every corner is described by the 40&times;40 window around it. The window is blurred with a Gaussian of &sigma;&nbsp;=&nbsp;2.5 and sampled on an 8&times;8 grid with 5 pixels between samples. Every sample then summarizes a whole 5&times;5 cell and the descriptor survives small misalignments. Each descriptor is normalized to zero mean and unit variance, which removes differences in brightness (bias) and contrast (gain) between photos.
+  </p>
+    <figure class="montage">
+      <a href="media/desc_toy.png" target="_blank" rel="noopener"><img src="media/desc_toy.png" width="1336" height="328" loading="lazy" alt="Eight 40 by 40 windows of the toy store photo and their 8 by 8 descriptors"></a>
+      <figcaption><b>Figure 24.</b> Eight corners of IMG_1527. The 40&times;40 windows are on top and the normalized 8&times;8 descriptors, stretched to the full gray range, are below.</figcaption>
+    </figure>
+
+  <h2 id="b3"><span class="secno">B3</span> Feature matching</h2>
+  <p class="setup">
+    Every descriptor of one photo is compared with all the descriptors of its neighbor by Euclidean distance. The nearest neighbor is accepted only if it is clearly closer than the second nearest, with a ratio threshold of 0.7 (Lowe's test). A true match has one good candidate, while a corner without a counterpart, or one on a repeated texture, is about as far from all of them. The threshold was picked on the lounge pairs, which are the hardest, by sweeping it together with the number of corners. Raising it from 0.6 to 0.8 roughly doubles the matches but lowers the share that RANSAC accepts, and the number of corners made a much larger difference (Figure 25 shows the toy store pair at the chosen setting).
+  </p>
+    <figure class="montage">
+      <a href="media/matches_toy_1527_1528.jpg" target="_blank" rel="noopener"><img src="media/matches_toy_1527_1528.jpg" width="1500" height="1000" loading="lazy" alt="Ratio test matches between IMG_1527 and IMG_1528"></a>
+      <figcaption><b>Figure 25.</b> 832 ratio test matches between IMG_1527 and IMG_1528. A random sample of 150 is drawn.</figcaption>
+    </figure>
+
+  <h2 id="b4"><span class="secno">B4</span> RANSAC and automatic mosaics</h2>
+  <p class="setup">
+    Some matches are still wrong, and a least squares fit lets a single one pull the homography far off. 4-point RANSAC avoids that: it fits <i>H</i> exactly to 4 random matches, counts the matches that <i>H</i> lands within 3 pixels of (the inliers), and repeats 3000 times. The <i>H</i> with the most inliers is then refit by least squares to all of its inliers. The same code then chains the pairs together and blends them as in Part A, with no clicked points.
+  </p>
+    <figure class="montage">
+      <a href="media/ransac_toy_1527_1528.jpg" target="_blank" rel="noopener"><img src="media/ransac_toy_1527_1528.jpg" width="1500" height="1000" loading="lazy" alt="RANSAC inliers in green and outliers in red between IMG_1527 and IMG_1528"></a>
+      <figcaption><b>Figure 26.</b> The matches of Figure 25 after RANSAC, 637 inliers in green and 195 outliers in red. A random sample of 150 is drawn. Most of the red lines are on the floor, where the wood grain repeats.</figcaption>
+    </figure>
+
+  <table class="data-table runtime">
+    <thead><tr><th>Pair</th><th>Matches</th><th>Inliers</th></tr></thead>
+    <tbody>
+      <tr><td>Lounge 1505&ndash;1506</td><td class="num">197</td><td class="num">94</td></tr>
+      <tr><td>Lounge 1506&ndash;1507</td><td class="num">453</td><td class="num">175</td></tr>
+      <tr><td>Lounge 1507&ndash;1508</td><td class="num">509</td><td class="num">195</td></tr>
+      <tr><td>Toy 1527&ndash;1528</td><td class="num">832</td><td class="num">637</td></tr>
+      <tr><td>Toy 1528&ndash;1529</td><td class="num">923</td><td class="num">619</td></tr>
+      <tr><td>Toy 1529&ndash;1530</td><td class="num">979</td><td class="num">516</td></tr>
+      <tr><td>Toy 1530&ndash;1531</td><td class="num">710</td><td class="num">342</td></tr>
+      <tr><td>Plaza 1563&ndash;1564</td><td class="num">632</td><td class="num">426</td></tr>
+      <tr><td>Plaza 1564&ndash;1565</td><td class="num">601</td><td class="num">459</td></tr>
+      <tr><td>Plaza 1565&ndash;1566</td><td class="num">662</td><td class="num">345</td></tr>
+    </tbody>
+  </table>
+  <p class="setup">
+    The inliers sit about 1.1 to 1.7 pixels from where <i>H</i> sends them. The lounge has the fewest matches, since its smooth walls have few corners, and it was the pair that failed with 1000 corners per photo: the first pair had 15 inliers and the left ceiling edge of the mosaic came out misaligned. With 3000 corners it has 94.
+  </p>
+
+  <h3><span class="secno">4.1</span> Manual and automatic mosaics</h3>
+  <p class="setup">
+    The automatic mosaics use the same reference photos, canvases and blend as the manual ones from Part A.
+  </p>
+    <figure class="montage">
+      <a href="media/compare_lounge.jpg" target="_blank" rel="noopener"><img src="media/compare_lounge.jpg" width="1370" height="644" loading="lazy" alt="The lounge mosaic from clicked points and from automatic features"></a>
+      <figcaption><b>Figure 27.</b> The lounge, from clicked points on the left and from automatic features on the right.</figcaption>
+    </figure>
+    <figure class="montage">
+      <a href="media/compare_toy.jpg" target="_blank" rel="noopener"><img src="media/compare_toy.jpg" width="1569" height="644" loading="lazy" alt="The toy store mosaic from clicked points and from automatic features"></a>
+      <figcaption><b>Figure 28.</b> The toy store, from clicked points on the left and from automatic features on the right.</figcaption>
+    </figure>
+    <figure class="montage">
+      <a href="media/compare_plaza.jpg" target="_blank" rel="noopener"><img src="media/compare_plaza.jpg" width="1355" height="644" loading="lazy" alt="The plaza mosaic from clicked points and from automatic features"></a>
+      <figcaption><b>Figure 29.</b> The plaza, from clicked points on the left and from automatic features on the right.</figcaption>
+    </figure>
+  <p class="setup">
+    The two methods agree closely on all three scenes. The automatic homographies come from hundreds of matches spread over each overlap, against 12 clicks that are a few pixels off by hand (Part A reprojection errors reach 13 pixels), so the seams and straight edges are at least as good.
+  </p>
 
 </main>
 <script>

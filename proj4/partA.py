@@ -150,6 +150,22 @@ def chain_homographies(pair_H, reference):
         to_ref[k] = to_ref[k - 1] @ np.linalg.inv(pair_H[k - 1])
     return [H / H[2, 2] for H in to_ref]
 
+def build_mosaic(imgs, to_ref, set_name):
+    # Warp the photos into the reference frame with their homographies to the reference (bilinear), place them on one
+    # canvas and blend them with the multiresolution blend
+    # One bounding box for all the warps, so every warped photo is already in place on the canvas
+    boxes = np.array([output_bbox(im.shape, H) for im, H in zip(imgs, to_ref)])
+    bbox = (boxes[:, 0].min(), boxes[:, 1].min(), boxes[:, 2].max(), boxes[:, 3].max())
+    print(f"{set_name}: canvas {bbox[2] - bbox[0] + 1}x{bbox[3] - bbox[1] + 1}")
+    if bbox[2] - bbox[0] > 12000 or bbox[3] - bbox[1] > 12000:
+        raise ValueError(f"{set_name}: canvas is far too large, use fewer photos or a cylindrical projection")
+
+    layers = [warpImageBilinear(im, H, bbox) for im, H in zip(imgs, to_ref)]
+    images, alphas, _ = place_on_canvas(layers)
+    mosaic, t = timed(blend_laplacian, images, alphas)
+    print(f"{set_name}: blend {t:.1f}s")
+    return mosaic
+
 def run_partA4(path_to_img_folder, path_to_out_folder):
     # Warp the photos of every set into the middle photo's frame (bilinear), place them on one canvas and blend them
     # with the multiresolution blend
@@ -162,16 +178,6 @@ def run_partA4(path_to_img_folder, path_to_out_folder):
             pair_H.append(computeH(load_points(name, "im1") * SCALE, load_points(name, "im2") * SCALE))
         to_ref = chain_homographies(pair_H, reference)
 
-        # One bounding box for all the warps, so every warped photo is already in place on the canvas
-        boxes = np.array([output_bbox(im.shape, H) for im, H in zip(imgs, to_ref)])
-        bbox = (boxes[:, 0].min(), boxes[:, 1].min(), boxes[:, 2].max(), boxes[:, 3].max())
-        print(f"{set_name}: canvas {bbox[2] - bbox[0] + 1}x{bbox[3] - bbox[1] + 1}")
-        if bbox[2] - bbox[0] > 12000 or bbox[3] - bbox[1] > 12000:
-            raise ValueError(f"{set_name}: canvas is far too large, use fewer photos or a cylindrical projection")
-
-        layers = [warpImageBilinear(im, H, bbox) for im, H in zip(imgs, to_ref)]
-        images, alphas, _ = place_on_canvas(layers)
         save_img(os.path.join(path_to_out_folder, f"mosaic_{set_name}_sources.jpg"), montage_row(imgs, 400, labels=[f"IMG_{n}" + (" (ref)" if k == reference else "") for k, n in enumerate(numbers)]))
-        mosaic, t = timed(blend_laplacian, images, alphas)
-        print(f"{set_name}: blend {t:.1f}s")
+        mosaic = build_mosaic(imgs, to_ref, set_name)
         save_img(os.path.join(path_to_out_folder, f"mosaic_{set_name}_laplacian.jpg"), mosaic)

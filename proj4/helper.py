@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import scipy.ndimage
+import scipy.spatial.distance
+from harris import get_harris_corners
 
 def build_system(im1_pts, im2_pts):
     # Stack the linear system A h = b for the 8 unknowns h = (a, b, c, d, e, f, g, h) of H, with H[2, 2] fixed to 1.
@@ -157,3 +159,68 @@ def blend_laplacian(images, alphas, levels=4, sigma=8):
     mosaic = (weighted_bands / np.maximum(mask_sums, 1e-9)[..., np.newaxis]).sum(axis=0)
     mosaic[alphas.sum(axis=0) == 0] = 0
     return np.clip(np.round(mosaic), 0, 255).astype(np.uint8)
+
+def harris_corners(gray):
+    # Single scale Harris corners of a grayscale image (0 to 255). Returns the corners as n x 2 (x, y), strongest first,
+    # and the Harris response at each. Corners closer than 20 pixels to the border are dropped, so every one has a full
+    # 40 x 40 window around it
+    response, coords = get_harris_corners(gray.astype(float) / 255)
+    pts = coords[::-1].T
+    strengths = response[coords[0], coords[1]]
+    order = np.argsort(-strengths)
+    return pts[order], strengths[order]
+
+def anms(pts, strengths, n_keep, c_robust=0.9):
+    # Adaptive non-maximal suppression. The suppression radius of a corner is its distance to the nearest corner that is
+    # clearly stronger (the other one's strength times c_robust is still above its own). Keeping the corners with the
+    # largest radii leaves strong corners that are spread over the image instead of crowded in the most textured area.
+    # Expects the corners strongest first, and the strongest one gets an infinite radius
+    d2 = scipy.spatial.distance.cdist(pts, pts, "sqeuclidean")
+    d2[strengths[:, np.newaxis] * c_robust <= strengths[np.newaxis, :]] = np.inf
+    radii = d2.min(axis=1)
+    keep = np.argsort(-radii)[:n_keep]
+    return pts[keep], radii[keep]
+
+def extract_descriptors(gray, pts, window=40, size=8):
+    # Axis aligned descriptors: the window x window square around every corner is sampled on a size x size grid (spacing
+    # window / size pixels) from an image blurred to match the spacing, so every sample summarizes a whole cell instead of
+    # one noisy pixel. Each descriptor is then normalized to zero mean and unit variance, which removes differences in
+    # brightness (bias) and contrast (gain). Returns n x size x size
+    spacing = window / size
+    blurred = gaussian_blur(gray.astype(float), spacing / 2)
+    offsets = (np.arange(size) - (size - 1) / 2) * spacing
+    xs = pts[:, 0, np.newaxis, np.newaxis] + offsets[np.newaxis, np.newaxis, :]
+    ys = pts[:, 1, np.newaxis, np.newaxis] + offsets[np.newaxis, :, np.newaxis]
+    patches = scipy.ndimage.map_coordinates(blurred, [np.broadcast_to(ys, (len(pts), size, size)), np.broadcast_to(xs, (len(pts), size, size))], order=1)
+    mean = patches.mean(axis=(1, 2), keepdims=True)
+    std = patches.std(axis=(1, 2), keepdims=True)
+    return (patches - mean) / np.maximum(std, 1e-9)
+
+def match_features(desc1, desc2, ratio):
+    # For every descriptor of the first image find its nearest and second nearest descriptor in the second image and keep
+    # the match only if the nearest is much closer than the second (Lowe's ratio test). A real match has one clearly best
+    # candidate, while a feature without a counterpart (or on a repeated texture) is about as far from all of them.
+    # Returns the pairs of indices (i, j) as an m x 2 array
+    dist = scipy.spatial.distance.cdist(desc1.reshape(len(desc1), -1), desc2.reshape(len(desc2), -1))
+    nearest = np.argsort(dist, axis=1)[:, :2]
+    rows = np.arange(len(dist))
+    d1, d2 = dist[rows, nearest[:, 0]], dist[rows, nearest[:, 1]]
+    keep = d1 < ratio * d2
+    return np.stack([rows[keep], nearest[keep, 0]], axis=1)
+
+def ransac_homography(pts1, pts2, iterations=2000, threshold=3, seed=0):
+    # 4 point RANSAC. Fit H exactly to 4 random matches, count the matches it lands within threshold pixels of (inliers),
+    # and repeat. One bad match in the sample ruins H, but a clean sample of 4 is likely to turn up in a few hundred
+    # tries. The H with the most inliers is refit by least squares to all of its inliers. Returns H and the inlier mask
+    rng = np.random.default_rng(seed)
+    best = np.zeros(len(pts1), dtype=bool)
+    for _ in range(iterations):
+        sample = rng.choice(len(pts1), 4, replace=False)
+        H = computeH(pts1[sample], pts2[sample])
+        if not np.all(np.isfinite(H)):
+            continue
+        with np.errstate(all="ignore"):
+            inliers = reprojection_error(H, pts1, pts2) < threshold
+        if inliers.sum() > best.sum():
+            best = inliers
+    return computeH(pts1[best], pts2[best]), best
