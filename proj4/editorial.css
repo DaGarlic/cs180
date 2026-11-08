@@ -40,16 +40,13 @@ html { scroll-behavior: smooth; }
   padding: .8rem 1.25rem;
   display: flex;
   align-items: baseline;
-  gap: 1.5rem;
-  overflow-x: auto;
-  white-space: nowrap;
-  scrollbar-width: none;
+  gap: .45rem 1.25rem;
+  flex-wrap: wrap;
   font-family: var(--sans);
   font-size: .76rem;
   letter-spacing: .035em;
   text-transform: uppercase;
 }
-.topnav-in::-webkit-scrollbar { display: none; }
 .topnav a {
   color: var(--ink-soft);
   text-decoration: none;
@@ -63,14 +60,14 @@ html { scroll-behavior: smooth; }
 .topnav .home {
   color: var(--ink);
   font-weight: 600;
-  padding-right: 1.5rem;
+  padding-right: 1.25rem;
   border-right: 1px solid var(--rule);
 }
 
 .topnav a.active { color: var(--ink); }
 
 /* headings jumped to from the bar shouldn't land underneath it */
-h2[id] { scroll-margin-top: 3.4rem; }
+h2[id] { scroll-margin-top: 5.5rem; }
 
 /* on wide screens the bar becomes a fixed sidebar in the left margin */
 @media (min-width: 76rem) {
@@ -91,8 +88,7 @@ h2[id] { scroll-margin-top: 3.4rem; }
     flex-direction: column;
     align-items: flex-start;
     gap: .75rem;
-    overflow: visible;
-    white-space: normal;
+    flex-wrap: nowrap;
     border-left: 1px solid var(--rule);
   }
   .topnav .home { padding-right: 0; border-right: none; margin-bottom: .4rem; }
