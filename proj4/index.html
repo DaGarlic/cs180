@@ -280,7 +280,7 @@ def warpImageBilinear(im, H, bbox=None):
   <p class="setup">
     The Harris detector gives every pixel a corner strength and keeps the local maxima, and corners within 20 pixels of the border are dropped so that each one has a full 40&times;40 window around it. That leaves about 20000 corners per photo, which is far more than can be matched and mostly clustered on the busiest texture. Adaptive non-maximal suppression thins them out by giving every corner a radius: the distance to the nearest corner that is clearly stronger, meaning one whose strength times 0.9 is still above its own. Keeping the corners with the largest radii leaves strong corners that are also spread apart. Since the radii need the distance between every pair of corners, only the 6000 strongest corners enter the suppression, and 3000 are kept.
   </p>
-  <div class="grid3 wide">
+  <div class="grid2">
     <figure>
       <a href="media/harris_lounge.jpg" target="_blank" rel="noopener"><img src="media/harris_lounge.jpg" width="750" height="1000" loading="lazy" alt="All Harris corners of IMG_1505"></a>
       <figcaption><b>Figure 21.</b> All 20945 Harris corners of IMG_1505.</figcaption>
