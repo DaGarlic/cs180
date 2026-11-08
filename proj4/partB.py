@@ -69,16 +69,13 @@ def match_pair(features, k):
     return kept1[pairs[:, 0]], kept2[pairs[:, 1]]
 
 def run_partB1(path_to_img_folder, path_to_out_folder):
-    # Harris corners on the first photo of every set, drawn all together and then after ANMS, and the ANMS result with
-    # the same number of corners picked by Harris strength alone, to show what the suppression radius changes
+    # Harris corners on the first photo of every set, drawn all together and then after ANMS
     os.makedirs(path_to_out_folder, exist_ok=True)
     for set_name, numbers, _ in SETS:
         image = load_set(path_to_img_folder, numbers[:1])[0]
         pts, kept = detect(image)
-        strongest = pts[:N_KEEP]
         print(f"{set_name}: {len(pts)} Harris corners, ANMS keeps {len(kept)} of the strongest {N_CANDIDATES}")
         save_img(os.path.join(path_to_out_folder, f"harris_{set_name}.jpg"), draw_points(image, pts, (0, 0, 255), 3))
-        save_img(os.path.join(path_to_out_folder, f"strongest_{set_name}.jpg"), draw_points(image, strongest, (0, 255, 255)))
         save_img(os.path.join(path_to_out_folder, f"anms_{set_name}.jpg"), draw_points(image, kept, (0, 255, 0)))
 
 def run_partB2(path_to_img_folder, path_to_out_folder):
@@ -115,8 +112,7 @@ def run_partB3(path_to_img_folder, path_to_out_folder):
 
 def run_partB4(path_to_img_folder, path_to_out_folder):
     # Match every neighboring pair of a set, estimate its homography with RANSAC, chain the homographies into the
-    # reference photo's frame and blend, exactly as for the manual mosaics. Writes the RANSAC inliers of the first pair
-    # and the automatic mosaic next to the manual one
+    # reference photo's frame and blend, exactly as for the manual mosaics. Writes the automatic mosaic next to the manual one
     os.makedirs(path_to_out_folder, exist_ok=True)
     for set_name, numbers, reference in SETS:
         imgs = load_set(path_to_img_folder, numbers)
@@ -129,8 +125,6 @@ def run_partB4(path_to_img_folder, path_to_out_folder):
             error = reprojection_error(H, pts1[inliers], pts2[inliers])
             print(f"{name}: {len(pts1)} matches, {inliers.sum()} inliers, inlier error mean {error.mean():.2f}px, RANSAC {t:.2f}s")
             pair_H.append(H)
-            if k == 0:
-                save_img(os.path.join(path_to_out_folder, f"ransac_{name}.jpg"), draw_matches(imgs[k], imgs[k + 1], pts1, pts2, inliers))
 
         mosaic = build_mosaic(imgs, chain_homographies(pair_H, reference), set_name)
         save_img(os.path.join(path_to_out_folder, f"auto_{set_name}.jpg"), mosaic)
